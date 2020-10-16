@@ -159,7 +159,7 @@ function commandHandler(db) {
 
         if (command === 'toggleupdates') {
             if (checkIfOwner(message)) {
-                message.channel.send(`Toggled automatic updates on roles.`)
+                message.channel.send(`Toggled automatic updates on for roles.`)
                 toggleUpdates(message, db);
             }
         }
@@ -171,10 +171,6 @@ function commandHandler(db) {
                     message.channel.send(`Finished updating all roles`)
                 })
             }
-        }
-
-        if (command === 'nab') {
-            message.channel.send("Nab on kova man");
         }
 
         if (command === "me") {
@@ -321,7 +317,7 @@ function commandHandler(db) {
                                     const role = message.guild.roles.cache.find(role => role.name === "Top 50+");
                                     msgMembRole.add(role);
                                 }
-                                message.channel.send(`I added an approriate role for your rank which was: ${res.playerInfo.countryRank}`)
+                                message.channel.send(`I added an approriate role for your rank.`)
                             }
                             catch {
                                 message.channel.send("It seems I was unable to add a role approriate for your rank.")
