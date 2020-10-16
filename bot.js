@@ -1,3 +1,5 @@
+const config = require('./config.json')
+
 const Discord = require('discord.js');
 const client = new Discord.Client();
 const prefix = config.prefix
@@ -9,7 +11,7 @@ const assert = require('assert');
 const url = 'mongodb://localhost:27017';
 const dbName = 'discordRankBot';
 
-const config = require('./config.json')
+
 
 MongoClient.connect(url, function (err, client) {
     assert.strictEqual(null, err);
@@ -183,7 +185,7 @@ function commandHandler(db) {
                     message.channel.send(`I'm sorry I could not find you in the database.`);
                 }
                 else {
-                    fetch(`https://new.scoresaber.com/api/player/'${dbres[0].scId}'/full`)
+                    fetch(`https://new.scoresaber.com/api/player/${dbres[0].scId}/full`)
                         .then(res => res.json())
                         .then(res => {
                             console.log(`${res.playerInfo.playerName} r:${res.playerInfo.countryRank}`);
@@ -292,7 +294,7 @@ function commandHandler(db) {
                 else {
                     if (err) throw err;
                     console.log(dbres[0].scId);
-                    fetch(`https://new.scoresaber.com/api/player/'${dbres[0].scId}'/full`)
+                    fetch(`https://new.scoresaber.com/api/player/${dbres[0].scId}/full`)
                         .then(res => res.json())
                         .then(res => {
                             console.log(`Player: ${res.playerInfo.playerName} countryrank: ${res.playerInfo.countryRank}`);
