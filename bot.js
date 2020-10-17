@@ -99,6 +99,16 @@ function UpdateAllRoles(db) {
                         member.roles.add(rankRole);
                         console.log(`Added top 10 to ${dbres[i].discName}`)
                     }
+                    else if (playerRanks[i] <= 15) {
+                        const rankRole = guild.roles.cache.filter(role => role.name === "Top 15")
+                        member.roles.add(rankRole);
+                        console.log(`Added top 15 to ${dbres[i].discName}`)
+                    }
+                    else if (playerRanks[i] <= 20) {
+                        const rankRole = guild.roles.cache.filter(role => role.name === "Top 20")
+                        member.roles.add(rankRole);
+                        console.log(`Added top 20 to ${dbres[i].discName}`)
+                    }
                     else if (playerRanks[i] <= 25) {
                         const rankRole = guild.roles.cache.filter(role => role.name === "Top 25")
                         member.roles.add(rankRole);
@@ -278,6 +288,18 @@ function commandHandler(db) {
                         name: 'Top 5'
                     },
                 }).catch(console.error);
+
+                message.guild.roles.create({
+                    data: {
+                        name: 'Top 15'
+                    },
+                }).catch(console.error);
+
+                message.guild.roles.create({
+                    data: {
+                        name: 'Top 20'
+                    },
+                }).catch(console.error);
             }
         }
 
@@ -303,6 +325,14 @@ function commandHandler(db) {
                                 }
                                 else if (res.playerInfo.countryRank <= 10) {
                                     const role = message.guild.roles.cache.find(role => role.name === "Top 10");
+                                    msgMembRole.add(role);
+                                }
+                                else if (res.playerInfo.countryRank <= 15) {
+                                    const role = message.guild.roles.cache.find(role => role.name === "Top 15");
+                                    msgMembRole.add(role);
+                                }
+                                else if (res.playerInfo.countryRank <= 20) {
+                                    const role = message.guild.roles.cache.find(role => role.name === "Top 20");
                                     msgMembRole.add(role);
                                 }
                                 else if (res.playerInfo.countryRank <= 25) {
