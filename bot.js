@@ -25,7 +25,7 @@ MongoClient.connect(url, function (err, client) {
     commandHandler(db);
 });
 
-function OnLeave(db) {
+function onLeave(db) {
     client.on("guildMemberRemove", (member) => {
         const myquery = { discId: member.id }
         db.collection("discordRankBotUsers").find(myquery).toArray(function (err, dbres) {
