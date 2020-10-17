@@ -229,7 +229,7 @@ function commandHandler(db) {
                 fetch(`https://new.scoresaber.com/api/player/${args[0]}/full`)
                     .then(res => res.json())
                     .then(res => {
-                        if (res.playerInfo.country === "FI") {
+                        if (res.playerInfo.country === config.country) {
                             message.channel.send("Trying to add you...");
                             db.collection("discordRankBotUsers").find(query).toArray(function (err, dbres) {
                                 if (err) throw err;
