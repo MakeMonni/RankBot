@@ -21,7 +21,7 @@ MongoClient.connect(url, function (err, client) {
     discordlogin();
     discordClientReady();
 
-    OnLeave(db);
+    onLeave(db);
     commandHandler(db);
 });
 
