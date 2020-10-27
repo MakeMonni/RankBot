@@ -75,59 +75,42 @@ function UpdateAllRoles(db) {
             const Gid = config.guildId;
 
             client.guilds.fetch(Gid).then(guild => {
-                const removableRoles = guild.roles.cache.filter(role => role.name.startsWith("Top")).array();
-
                 for (let i = 0; i < dbres.length; i++) {
-                    console.log(`Trying to remove rank from ${dbres[i].discName} ${dbres[i].discId}`);
                     const member = guild.members.cache.find(member => member.id === dbres[i].discId);
-                    if (member.roles.cache.some(role => role.name.startsWith("Top"))) {
-                        member.roles.remove(removableRoles)
-                            .then(console.log(`Removed role from user ${dbres[i].discName}.`))
-                            .catch(console.error);
+                    const memberRoles = member.roles.cache.array().filter(role => !role.name.startsWith("Top"));
+                    const playerRank = playerRanks[i];
+
+                    let addRole = null;
+                    if (playerRank <= 5) {
+                        addRole = guild.roles.cache.filter(role => role.name === "Top 5").first();
                     }
-                    else {
-                        console.log(`${dbres[i].discName} had no role.`)
+                    else if (playerRank <= 10) {
+                        addRole = guild.roles.cache.filter(role => role.name === "Top 10").first();
+                    }
+                    else if (playerRank <= 15) {
+                        addRole = guild.roles.cache.filter(role => role.name === "Top 15").first();
+                    }
+                    else if (playerRank <= 20) {
+                        addRole  = guild.roles.cache.filter(role => role.name === "Top 20").first();
+                    }
+                    else if (playerRank <= 25) {
+                        addRole = guild.roles.cache.filter(role => role.name === "Top 25").first();
+                    }
+                    else if (playerRank <= 50) {
+                        addRole = guild.roles.cache.filter(role => role.name === "Top 50").first();
+                    }
+                    else if (playerRank > 50) {
+                        addRole = guild.roles.cache.filter(role => role.name === "Top 50+").first();
                     }
 
-                    if (playerRanks[i] <= 5) {
-                        const rankRole = guild.roles.cache.filter(role => role.name === "Top 5")
-                        member.roles.add(rankRole);
-                        console.log(`Added top 5 to ${dbres[i].discName}`)
-                    }
-                    else if (playerRanks[i] <= 10) {
-                        const rankRole = guild.roles.cache.filter(role => role.name === "Top 10")
-                        member.roles.add(rankRole);
-                        console.log(`Added top 10 to ${dbres[i].discName}`)
-                    }
-                    else if (playerRanks[i] <= 15) {
-                        const rankRole = guild.roles.cache.filter(role => role.name === "Top 15")
-                        member.roles.add(rankRole);
-                        console.log(`Added top 15 to ${dbres[i].discName}`)
-                    }
-                    else if (playerRanks[i] <= 20) {
-                        const rankRole = guild.roles.cache.filter(role => role.name === "Top 20")
-                        member.roles.add(rankRole);
-                        console.log(`Added top 20 to ${dbres[i].discName}`)
-                    }
-                    else if (playerRanks[i] <= 25) {
-                        const rankRole = guild.roles.cache.filter(role => role.name === "Top 25")
-                        member.roles.add(rankRole);
-                        console.log(`Added top 25 to ${dbres[i].discName}`)
-                    }
-                    else if (playerRanks[i] <= 50) {
-                        const rankRole = guild.roles.cache.filter(role => role.name === "Top 50")
-                        member.roles.add(rankRole);
-                        console.log(`Added top 50 to ${dbres[i].discName}`)
-                    }
-                    else if (playerRanks[i] > 50) {
-                        const rankRole = guild.roles.cache.filter(role => role.name === "Top 50+")
-                        member.roles.add(rankRole);
-                        console.log(`Added top 50+ to ${dbres[i].discName}`)
-                    }
+                    console.log(`Adding role ${addRole.name} to user ${dbres[i].discName}`);
+                    memberRoles.push(addRole);
+                    member.roles.set(memberRoles)
+                        .then(() => console.log(`Successfully added role ${addRole.name} to user ${dbres[i].discName}`))
+                        .catch(() => console.error(`Failed to add role ${addRole.name} to user ${dbres[i].discName}`));
                 }
-            })
-        }
-        );
+            });
+        });
     })
 }
 
@@ -259,47 +242,23 @@ function commandHandler(db) {
 
         if (command === "createroles") {
             if (checkIfOwner(message)) {
-                message.guild.roles.create({
-                    data: {
-                        name: 'Top 50+'
-                    },
-                }).catch(console.error);
+                const roleNames = [
+                    "Top 50+",
+                    "Top 50",
+                    "Top 25",
+                    "Top 20",
+                    "Top 15",
+                    "Top 10",
+                    "Top 5"
+                ];
 
-                message.guild.roles.create({
-                    data: {
-                        name: 'Top 50'
-                    },
-                }).catch(console.error);
-
-                message.guild.roles.create({
-                    data: {
-                        name: 'Top 25'
-                    },
-                }).catch(console.error);
-
-                message.guild.roles.create({
-                    data: {
-                        name: 'Top 10'
-                    },
-                }).catch(console.error);
-
-                message.guild.roles.create({
-                    data: {
-                        name: 'Top 5'
-                    },
-                }).catch(console.error);
-
-                message.guild.roles.create({
-                    data: {
-                        name: 'Top 15'
-                    },
-                }).catch(console.error);
-
-                message.guild.roles.create({
-                    data: {
-                        name: 'Top 20'
-                    },
-                }).catch(console.error);
+                for (let roleName of roleNames)
+                    if (!message.guild.roles.cache.some(role => role.name == roleName));
+                        message.guild.roles.create({
+                            data: {
+                                name: roleName
+                            }
+                        }).catch(err => console.error(`Failed to create role ${roleName}`, err));
             }
         }
 
