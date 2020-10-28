@@ -77,6 +77,11 @@ function UpdateAllRoles(db) {
             client.guilds.fetch(Gid).then(guild => {
                 for (let i = 0; i < dbres.length; i++) {
                     const member = guild.members.cache.find(member => member.id === dbres[i].discId);
+                    if (!member) {
+                        console.log(`Database contained user ${dbres[i].discName} [${dbres[i].discId}] that could not be updated`);
+                        continue;
+                    }
+
                     const memberRoles = member.roles.cache.array().filter(role => !role.name.startsWith("Top"));
                     const playerRank = playerRanks[i];
 
