@@ -51,7 +51,12 @@ function discordlogin() {
 function discordClientReady() {
     client.on('ready', () => {
         console.log('Ready to rumble!');
+        statusOff();
     });
+}
+
+function statusOff() {
+    client.user.setActivity("Updates OFF");
 }
 
 function checkIfOwner(message) {
@@ -59,7 +64,7 @@ function checkIfOwner(message) {
     else message.channel.send(`Sorry you lack the permissions for this command.`);
 }
 
-function UpdateAllRoles(db) {
+function UpdateAllRoles(db, callback) {
     db.collection("discordRankBotUsers").find({}).toArray(function (err, dbres) {
         if (err) throw err;
 
@@ -96,7 +101,7 @@ function UpdateAllRoles(db) {
                         addRole = guild.roles.cache.filter(role => role.name === "Top 15").first();
                     }
                     else if (playerRank <= 20) {
-                        addRole  = guild.roles.cache.filter(role => role.name === "Top 20").first();
+                        addRole = guild.roles.cache.filter(role => role.name === "Top 20").first();
                     }
                     else if (playerRank <= 25) {
                         addRole = guild.roles.cache.filter(role => role.name === "Top 25").first();
@@ -113,6 +118,8 @@ function UpdateAllRoles(db) {
                     member.roles.set(memberRoles)
                         .then(() => console.log(`Successfully added role ${addRole.name} to user ${dbres[i].discName}`))
                         .catch(() => console.error(`Failed to add role ${addRole.name} to user ${dbres[i].discName}`));
+
+                    callback();
                 }
             });
         });
@@ -133,20 +140,35 @@ let automaticUpdatesOnOff;
 
 function toggleUpdates(message, db) {
     if (!automaticUpdatesOnOff) {
-        automaticUpdatesOnOff = setInterval(() => { updates(message, db) }, 1000 * 60 * 60 * config.updateIntervalHours);
+        automaticUpdatesOnOff = setInterval(() => { updates(message, db) }, 1000 * 60);
     } else {
         clearInterval(automaticUpdatesOnOff);
+        statusOff()
         automaticUpdatesOnOff = null;
     }
 }
 
-function updates(message, db) {
-    message.channel.send("Started an automatic role update");
-    console.log(`Updating rank roles.`);
-    UpdateAllRoles(db);
-    message.channel.send("Finished.");
-}
+let TimeRemainingHours = config.updateIntervalHours;
+let TimeRemainingMinutes = 0;
 
+function updates(message, db) {
+    if (TimeRemainingHours === 0 && TimeRemainingMinutes === 0) {
+        TimeRemainingHours = config.updateIntervalHours - 1;
+        TimeRemainingMinutes = 59;
+        message.channel.send("Started an automatic role update");
+        console.log(`Updating rank roles.`);
+        UpdateAllRoles(db, function () {
+            message.channel.send("Finished.");
+            console.log(`Completed role updates.`);
+        })
+    }
+    else if (TimeRemainingMinutes === 0) {
+        TimeRemainingHours--
+        TimeRemainingMinutes = 59
+    }
+    else TimeRemainingMinutes--;
+    client.user.setActivity(`Next update in ${TimeRemainingHours}:${TimeRemainingMinutes.toString().padStart(2, '0')}`)
+}
 
 function commandHandler(db) {
     client.on('message', message => {
@@ -154,6 +176,10 @@ function commandHandler(db) {
 
         const args = message.content.slice(prefix.length).trim().split(' ');
         const command = args.shift().toLowerCase();
+
+        if (command === 'test') {
+
+        }
 
         if (command === 'toggleupdates') {
             if (checkIfOwner(message)) {
@@ -165,12 +191,13 @@ function commandHandler(db) {
         if (command === 'updateallroles') {
             if (checkIfOwner(message)) {
                 message.channel.send(`Updating all registered user roles.`).then(() => {
-                    UpdateAllRoles(db);
-                    message.channel.send(`Finished updating all roles`)
+                    UpdateAllRoles(db, function () {
+                        message.channel.send("Finished.");
+                        console.log(`Completed role updates.`);
+                    })
                 })
             }
         }
-
         if (command === "me") {
             const query = { discId: message.author.id };
             db.collection("discordRankBotUsers").find(query).toArray(function (err, dbres) {
@@ -259,11 +286,11 @@ function commandHandler(db) {
 
                 for (let roleName of roleNames)
                     if (!message.guild.roles.cache.some(role => role.name == roleName));
-                        message.guild.roles.create({
-                            data: {
-                                name: roleName
-                            }
-                        }).catch(err => console.error(`Failed to create role ${roleName}`, err));
+                message.guild.roles.create({
+                    data: {
+                        name: roleName
+                    }
+                }).catch(err => console.error(`Failed to create role ${roleName}`, err));
             }
         }
 
