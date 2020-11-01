@@ -118,10 +118,9 @@ function UpdateAllRoles(db, callback) {
                     member.roles.set(memberRoles)
                         .then(() => console.log(`Successfully added role ${addRole.name} to user ${dbres[i].discName}`))
                         .catch(() => console.error(`Failed to add role ${addRole.name} to user ${dbres[i].discName}`));
-
-                    callback();
                 }
             });
+            callback();
         });
     })
 }
