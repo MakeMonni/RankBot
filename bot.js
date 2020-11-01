@@ -81,43 +81,44 @@ function UpdateAllRoles(db, callback) {
 
             client.guilds.fetch(Gid).then(guild => {
                 for (let i = 0; i < dbres.length; i++) {
-                    const member = guild.members.cache.find(member => member.id === dbres[i].discId);
-                    if (!member) {
-                        console.log(`Database contained user ${dbres[i].discName} [${dbres[i].discId}] that could not be updated`);
-                        continue;
-                    }
-
-                    const memberRoles = member.roles.cache.array().filter(role => !role.name.startsWith("Top"));
-                    const playerRank = playerRanks[i];
-
-                    let addRole = null;
-                    if (playerRank <= 5) {
-                        addRole = guild.roles.cache.filter(role => role.name === "Top 5").first();
-                    }
-                    else if (playerRank <= 10) {
-                        addRole = guild.roles.cache.filter(role => role.name === "Top 10").first();
-                    }
-                    else if (playerRank <= 15) {
-                        addRole = guild.roles.cache.filter(role => role.name === "Top 15").first();
-                    }
-                    else if (playerRank <= 20) {
-                        addRole = guild.roles.cache.filter(role => role.name === "Top 20").first();
-                    }
-                    else if (playerRank <= 25) {
-                        addRole = guild.roles.cache.filter(role => role.name === "Top 25").first();
-                    }
-                    else if (playerRank <= 50) {
-                        addRole = guild.roles.cache.filter(role => role.name === "Top 50").first();
-                    }
-                    else if (playerRank > 50) {
-                        addRole = guild.roles.cache.filter(role => role.name === "Top 50+").first();
-                    }
-
-                    console.log(`Adding role ${addRole.name} to user ${dbres[i].discName}`);
-                    memberRoles.push(addRole);
-                    member.roles.set(memberRoles)
-                        .then(() => console.log(`Successfully added role ${addRole.name} to user ${dbres[i].discName}`))
-                        .catch(() => console.error(`Failed to add role ${addRole.name} to user ${dbres[i].discName}`));
+                    guild.members.fetch(dbres[i].discId).then(member => {
+                        if (!member) {
+                            console.log(`Database contained user ${dbres[i].discName} [${dbres[i].discId}] that could not be updated`);
+                            return;
+                        }
+    
+                        const memberRoles = member.roles.cache.array().filter(role => !role.name.startsWith("Top"));
+                        const playerRank = playerRanks[i];
+    
+                        let addRole = null;
+                        if (playerRank <= 5) {
+                            addRole = guild.roles.cache.filter(role => role.name === "Top 5").first();
+                        }
+                        else if (playerRank <= 10) {
+                            addRole = guild.roles.cache.filter(role => role.name === "Top 10").first();
+                        }
+                        else if (playerRank <= 15) {
+                            addRole = guild.roles.cache.filter(role => role.name === "Top 15").first();
+                        }
+                        else if (playerRank <= 20) {
+                            addRole = guild.roles.cache.filter(role => role.name === "Top 20").first();
+                        }
+                        else if (playerRank <= 25) {
+                            addRole = guild.roles.cache.filter(role => role.name === "Top 25").first();
+                        }
+                        else if (playerRank <= 50) {
+                            addRole = guild.roles.cache.filter(role => role.name === "Top 50").first();
+                        }
+                        else if (playerRank > 50) {
+                            addRole = guild.roles.cache.filter(role => role.name === "Top 50+").first();
+                        }
+    
+                        console.log(`Adding role ${addRole.name} to user ${dbres[i].discName}`);
+                        memberRoles.push(addRole);
+                        member.roles.set(memberRoles)
+                            .then(() => console.log(`Successfully added role ${addRole.name} to user ${dbres[i].discName}`))
+                            .catch(() => console.error(`Failed to add role ${addRole.name} to user ${dbres[i].discName}`));
+                    })
                 }
             });
             callback();
