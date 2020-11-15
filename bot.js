@@ -11,18 +11,16 @@ const assert = require('assert');
 const url = 'mongodb://localhost:27017';
 const dbName = 'discordRankBot';
 
-
-
-MongoClient.connect(url, function (err, client) {
+MongoClient.connect(url, async (err, client) => {
     assert.strictEqual(null, err);
     console.log("Connected successfully to database");
     const db = client.db(dbName);
 
-    discordlogin();
+    await discordlogin();
     discordClientReady();
 
     onLeave(db);
-    commandHandler(db);
+    await commandHandler(db);
 });
 
 function onLeave(db) {
@@ -44,19 +42,19 @@ function onLeave(db) {
     });
 }
 
-function discordlogin() {
-    client.login(config.token);
+async function discordlogin() {
+    await client.login(config.token);
 }
 
 function discordClientReady() {
-    client.on('ready', () => {
+    client.on('ready', async () => {
         console.log('Ready to rumble!');
-        statusOff();
+        await statusOff();
     });
 }
 
-function statusOff() {
-    client.user.setActivity("Updates OFF");
+async function statusOff() {
+    await client.user.setActivity("Updates OFF");
 }
 
 function checkIfOwner(message) {
@@ -64,66 +62,62 @@ function checkIfOwner(message) {
     else message.channel.send(`Sorry you lack the permissions for this command.`);
 }
 
-function UpdateAllRoles(db, callback) {
-    db.collection("discordRankBotUsers").find({}).toArray(function (err, dbres) {
-        if (err) throw err;
+async function UpdateAllRoles(db) {
+    const dbres = await db.collection("discordRankBotUsers").find({}).toArray();
 
-        const requests =
-            dbres
-                .map(user => `https://new.scoresaber.com/api/player/${user.scId}/full`)
-                .map(url => fetch(url).then(resp => resp.json()));
+    const requests =
+        dbres
+            .map(user => `https://new.scoresaber.com/api/player/${user.scId}/full`)
+            .map(url => fetch(url).then(resp => resp.json()));
 
-        Promise.all(requests).then(responses => {
-            const playerRanks = responses.map(response => response.playerInfo.countryRank);
-            console.log(`player ranks: ${playerRanks}`);
+    const responses = await Promise.all(requests);
+    const playerRanks = responses.map(response => response.playerInfo.countryRank);
+    console.log(`player ranks: ${playerRanks}`);
 
-            const Gid = config.guildId;
+    const Gid = config.guildId;
 
-            client.guilds.fetch(Gid).then(guild => {
-                for (let i = 0; i < dbres.length; i++) {
-                    const member = guild.members.cache.find(member => member.id === dbres[i].discId);
-                    if (!member) {
-                        console.log(`Database contained user ${dbres[i].discName} [${dbres[i].discId}] that could not be updated`);
-                        continue;
-                    }
+    const guild = await client.guilds.fetch(Gid);
+    for (let i = 0; i < dbres.length; i++) {
+        const member = await guild.members.fetch({ user: dbres[i].discId, force: true });
+        if (!member) {
+            console.log(`Database contained user ${dbres[i].discName} [${dbres[i].discId}] that could not be updated`);
+            console.log(dbres[i]);
+            continue;
+        }
 
-                    const memberRoles = member.roles.cache.array().filter(role => !role.name.startsWith("Top"));
-                    const playerRank = playerRanks[i];
+        const memberRoles = member.roles.cache.array().filter(role => !role.name.startsWith("Top"));
+        const playerRank = playerRanks[i];
 
-                    let addRole = null;
-                    if (playerRank <= 5) {
-                        addRole = guild.roles.cache.filter(role => role.name === "Top 5").first();
-                    }
-                    else if (playerRank <= 10) {
-                        addRole = guild.roles.cache.filter(role => role.name === "Top 10").first();
-                    }
-                    else if (playerRank <= 15) {
-                        addRole = guild.roles.cache.filter(role => role.name === "Top 15").first();
-                    }
-                    else if (playerRank <= 20) {
-                        addRole = guild.roles.cache.filter(role => role.name === "Top 20").first();
-                    }
-                    else if (playerRank <= 25) {
-                        addRole = guild.roles.cache.filter(role => role.name === "Top 25").first();
-                    }
-                    else if (playerRank <= 50) {
-                        addRole = guild.roles.cache.filter(role => role.name === "Top 50").first();
-                    }
-                    else if (playerRank > 50) {
-                        addRole = guild.roles.cache.filter(role => role.name === "Top 50+").first();
-                    }
+        let addRole = null;
+        if (playerRank <= 5) {
+            addRole = guild.roles.cache.filter(role => role.name === "Top 5").first();
+        }
+        else if (playerRank <= 10) {
+            addRole = guild.roles.cache.filter(role => role.name === "Top 10").first();
+        }
+        else if (playerRank <= 15) {
+            addRole = guild.roles.cache.filter(role => role.name === "Top 15").first();
+        }
+        else if (playerRank <= 20) {
+            addRole = guild.roles.cache.filter(role => role.name === "Top 20").first();
+        }
+        else if (playerRank <= 25) {
+            addRole = guild.roles.cache.filter(role => role.name === "Top 25").first();
+        }
+        else if (playerRank <= 50) {
+            addRole = guild.roles.cache.filter(role => role.name === "Top 50").first();
+        }
+        else if (playerRank > 50) {
+            addRole = guild.roles.cache.filter(role => role.name === "Top 50+").first();
+        }
 
-                    console.log(`Adding role ${addRole.name} to user ${dbres[i].discName}`);
-                    memberRoles.push(addRole);
-                    member.roles.set(memberRoles)
-                        .then(() => console.log(`Successfully added role ${addRole.name} to user ${dbres[i].discName}`))
-                        .catch(() => console.error(`Failed to add role ${addRole.name} to user ${dbres[i].discName}`));
-                }
-            });
-            callback();
-        });
-    })
+        console.log(`Adding role ${addRole.name} to user ${dbres[i].discName}`);
+        memberRoles.push(addRole);
+        member.roles.set(memberRoles);
+        console.log(`Successfully added role ${addRole.name} to user ${dbres[i].discName}`)
+    };
 }
+
 
 function removeOtherRankRoles(message) {
     const msgMembRole = message.member.roles;
@@ -150,16 +144,16 @@ function toggleUpdates(message, db) {
 let TimeRemainingHours = config.updateIntervalHours;
 let TimeRemainingMinutes = 0;
 
-function updates(message, db) {
+async function updates(message, db) {
     if (TimeRemainingHours === 0 && TimeRemainingMinutes === 0) {
         TimeRemainingHours = config.updateIntervalHours - 1;
         TimeRemainingMinutes = 59;
-        message.channel.send("Started an automatic role update");
-        console.log(`Updating rank roles.`);
-        UpdateAllRoles(db, function () {
-            message.channel.send("Finished.");
-            console.log(`Completed role updates.`);
-        })
+        await message.channel.send("Started an automatic role update");
+        await console.log(`Updating rank roles.`);
+        await UpdateAllRoles(db)
+        await message.channel.send("Finished.");
+        await console.log(`Completed role updates.`);
+
     }
     else if (TimeRemainingMinutes === 0) {
         TimeRemainingHours--
@@ -169,8 +163,8 @@ function updates(message, db) {
     client.user.setActivity(`Next update in ${TimeRemainingHours}:${TimeRemainingMinutes.toString().padStart(2, '0')}`)
 }
 
-function commandHandler(db) {
-    client.on('message', message => {
+async function commandHandler(db) {
+    client.on('message', async (message) => {
         if (!message.content.startsWith(prefix) || message.author.bot) return;
 
         const args = message.content.slice(prefix.length).trim().split(' ');
@@ -182,19 +176,26 @@ function commandHandler(db) {
 
         if (command === 'toggleupdates') {
             if (checkIfOwner(message)) {
-                message.channel.send(`Toggled automatic updates on for roles.`)
+                message.channel.send(`Toggled automatic updates for roles.`)
                 toggleUpdates(message, db);
             }
         }
 
         if (command === 'updateallroles') {
             if (checkIfOwner(message)) {
-                message.channel.send(`Updating all registered user roles.`).then(() => {
-                    UpdateAllRoles(db, function () {
-                        message.channel.send("Finished.");
-                        console.log(`Completed role updates.`);
-                    })
-                })
+                await console.log(`Starting updates`)
+                await message.channel.send(`Updating all registered user roles.`)
+                try {
+                    await UpdateAllRoles(db);
+                    await message.channel.send(`Finished.`);
+                    await console.log(`Completed role updates.`);
+                }
+                catch (err) {
+                    await message.channel.send(`Failed to update all roles, check your logs dumfus`)
+                    console.log(err)
+                }
+
+
             }
         }
         if (command === "me") {
@@ -218,7 +219,7 @@ function commandHandler(db) {
         if (command === "deleteme") {
             removeOtherRankRoles(message);
             const myquery = { discId: message.author.id }
-            db.collection("discordRankBotUsers").find(query).toArray(function (err, dbres) {
+            db.collection("discordRankBotUsers").find(myquery).toArray(function (err, dbres) {
                 if (err) throw err;
                 if (!dbres[0]?.discId) {
                     message.channel.send(`I dont think you are in the database...`);
