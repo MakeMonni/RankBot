@@ -17,25 +17,25 @@ MongoClient.connect(url, async (err, client) => {
     const db = client.db(dbName);
 
     await discordlogin();
-    discordClientReady();
+    await discordClientReady();
+    await memberLeft(db);
 
-    onLeave(db);
     await commandHandler(db);
 });
 
-function onLeave(db) {
-    client.on("guildMemberRemove", (member) => {
-        const myquery = { discId: member.id }
+async function memberLeft(db) {
+    client.on('guildMemberRemove', (member) => {
+        const myquery = { discId: member.id };
         db.collection("discordRankBotUsers").find(myquery).toArray(function (err, dbres) {
             if (err) throw err;
 
             if (!dbres[0]?.discId) {
-                console.log(`${member.user.username} was not in db`)
+                console.log(`${member.user.username} left server but was not in db`);
             }
             else {
                 db.collection("discordRankBotUsers").deleteOne(myquery, function (err) {
                     if (err) throw err;
-                    console.log(`${member.user.username} deleted from the database`)
+                    else console.log(`${member.user.username} left server so deleted from the database`);
                 })
             }
         })
@@ -48,7 +48,7 @@ async function discordlogin() {
 
 function discordClientReady() {
     client.on('ready', async () => {
-        console.log('Ready to rumble!');
+        await console.log('Ready to rumble!');
         await statusOff();
     });
 }
@@ -63,7 +63,8 @@ function checkIfOwner(message) {
 }
 
 async function UpdateAllRoles(db) {
-    const dbres = await db.collection("discordRankBotUsers").find({}).toArray();
+    const dbres = await db.collection("discordRankBotUsers").find({ "country": config.country }).toArray();
+    console.log(`${dbres.length} users to update.`);
 
     const requests =
         dbres
@@ -78,46 +79,69 @@ async function UpdateAllRoles(db) {
 
     const guild = await client.guilds.fetch(Gid);
     for (let i = 0; i < dbres.length; i++) {
-        const member = await guild.members.fetch({ user: dbres[i].discId, force: true });
-        if (!member) {
-            console.log(`Database contained user ${dbres[i].discName} [${dbres[i].discId}] that could not be updated`);
-            console.log(dbres[i]);
+        try {
+            const member = await guild.members.fetch({ user: dbres[i].discId, force: true });
+            if (!member) {
+                console.log(`Database contained user ${dbres[i].discName} [${dbres[i].discId}] that could not be updated`);
+                console.log(dbres[i]);
+                continue;
+            }
+
+            const memberRoles = member.roles.cache.array().filter(role => !role.name.startsWith("Top"));
+            const playerRank = playerRanks[i];
+
+            if (playerRank !== 0) {
+                let addRole = null;
+                if (playerRank <= 5) {
+                    addRole = guild.roles.cache.filter(role => role.name === "Top 5").first();
+                }
+                else if (playerRank <= 10) {
+                    addRole = guild.roles.cache.filter(role => role.name === "Top 10").first();
+                }
+                else if (playerRank <= 15) {
+                    addRole = guild.roles.cache.filter(role => role.name === "Top 15").first();
+                }
+                else if (playerRank <= 20) {
+                    addRole = guild.roles.cache.filter(role => role.name === "Top 20").first();
+                }
+                else if (playerRank <= 25) {
+                    addRole = guild.roles.cache.filter(role => role.name === "Top 25").first();
+                }
+                else if (playerRank <= 50) {
+                    addRole = guild.roles.cache.filter(role => role.name === "Top 50").first();
+                }
+                else if (playerRank > 50) {
+                    addRole = guild.roles.cache.filter(role => role.name === "Top 50+").first();
+                }
+
+                console.log(`Adding role ${addRole.name} to user ${dbres[i].discName}...`);
+                memberRoles.push(addRole);
+                member.roles.set(memberRoles);
+                console.log(`...Success`);
+            }
+        }
+        catch (err) {
+            console.log(`Failed to automaticly update role for user: ${dbres[i].discName}.  Reason: ${err}`);
             continue;
         }
-
-        const memberRoles = member.roles.cache.array().filter(role => !role.name.startsWith("Top"));
-        const playerRank = playerRanks[i];
-
-        let addRole = null;
-        if (playerRank <= 5) {
-            addRole = guild.roles.cache.filter(role => role.name === "Top 5").first();
-        }
-        else if (playerRank <= 10) {
-            addRole = guild.roles.cache.filter(role => role.name === "Top 10").first();
-        }
-        else if (playerRank <= 15) {
-            addRole = guild.roles.cache.filter(role => role.name === "Top 15").first();
-        }
-        else if (playerRank <= 20) {
-            addRole = guild.roles.cache.filter(role => role.name === "Top 20").first();
-        }
-        else if (playerRank <= 25) {
-            addRole = guild.roles.cache.filter(role => role.name === "Top 25").first();
-        }
-        else if (playerRank <= 50) {
-            addRole = guild.roles.cache.filter(role => role.name === "Top 50").first();
-        }
-        else if (playerRank > 50) {
-            addRole = guild.roles.cache.filter(role => role.name === "Top 50+").first();
-        }
-
-        console.log(`Adding role ${addRole.name} to user ${dbres[i].discName}`);
-        memberRoles.push(addRole);
-        member.roles.set(memberRoles);
-        console.log(`Successfully added role ${addRole.name} to user ${dbres[i].discName}`)
     };
 }
 
+//https://discordjs.guide/miscellaneous/parsing-mention-arguments.html#using-regular-expressions
+async function getUserFromMention(mention) {
+    // The id is the first and only match found by the RegEx.
+    const matches = mention.match(/^<@!?(\d+)>$/);
+
+    console.log(mention);
+    // If supplied variable was not a mention, matches will be null instead of an array.
+    if (!matches) return;
+
+    // However the first element in the matches array will be the entire mention, not just the ID,
+    // so use index 1.
+    const id = matches[1];
+
+    return client.users.cache.get(id);
+}
 
 function removeOtherRankRoles(message) {
     const msgMembRole = message.member.roles;
@@ -136,7 +160,7 @@ function toggleUpdates(message, db) {
         automaticUpdatesOnOff = setInterval(() => { updates(message, db) }, 1000 * 60);
     } else {
         clearInterval(automaticUpdatesOnOff);
-        statusOff()
+        statusOff();
         automaticUpdatesOnOff = null;
     }
 }
@@ -150,17 +174,17 @@ async function updates(message, db) {
         TimeRemainingMinutes = 59;
         await message.channel.send("Started an automatic role update");
         await console.log(`Updating rank roles.`);
-        await UpdateAllRoles(db)
+        await UpdateAllRoles(db);
         await message.channel.send("Finished.");
         await console.log(`Completed role updates.`);
 
     }
     else if (TimeRemainingMinutes === 0) {
-        TimeRemainingHours--
-        TimeRemainingMinutes = 59
+        TimeRemainingHours--;
+        TimeRemainingMinutes = 59;
     }
     else TimeRemainingMinutes--;
-    client.user.setActivity(`Next update in ${TimeRemainingHours}:${TimeRemainingMinutes.toString().padStart(2, '0')}`)
+    client.user.setActivity(`Next update in ${TimeRemainingHours}:${TimeRemainingMinutes.toString().padStart(2, '0')}`);
 }
 
 async function commandHandler(db) {
@@ -171,39 +195,186 @@ async function commandHandler(db) {
         const command = args.shift().toLowerCase();
 
         if (command === 'test') {
+            message.channel.send("Haha yes good job testing :)");
+        }
 
+        if (command === 'updateallcountry') {
+            if (checkIfOwner(message)) {
+                const dbres = await db.collection("discordRankBotUsers").find({}).toArray();
+                for (let i = 0; i < dbres.length; i++) {
+                    await fetch(`https://new.scoresaber.com/api/player/${dbres[i].scId}/full`)
+                        .then(res => res.json())
+                        .then(res => {
+                            let myquery = { discId: dbres[i].discId };
+                            let newvalue = { $set: { country: res.playerInfo.country } };
+                            db.collection("discordRankBotUsers").updateOne(myquery, newvalue, function (err, updateres) {
+                                if (err) console.log(err);
+                                else console.log(`Updated country for user ${dbres[i].discName}`);
+                            })
+                        });
+                }
+                message.channel.send("Completed country updates.")
+            }
+        }
+
+        if (command === 'emojiupload') {
+            if (checkIfOwner(message)) {
+                message.guild.emojis.create(`updooter2.png`, `small_green_triangle_up`).then(emoji => message.channel.send(`The following emoji was uploaded ${emoji}`));
+            }
+        }
+
+        if (command === 'compare') {
+            try {
+                let usersToCheck = [];
+                let users = [];
+
+                const query = { discId: message.author.id };
+                const dbres = await db.collection("discordRankBotUsers").find(query).toArray();
+
+                if (dbres.length !== 0) {
+                    usersToCheck.push(dbres[0].scId);
+
+                    let user = await getUserFromMention(args[0]);
+                    console.log(user);
+                    let usersFlipped = false;
+                    let foundComparableUser = false;
+
+                    if (user && user.bot) {
+                        message.channel.send("Sorry bots dont play the game, unless your name is Taichi.");
+                    }
+
+                    else if (user && args[0]) {
+                        const mentionedQuery = { discId: user.id };
+                        console.log(mentionedQuery);
+                        const mentioneddbres = await db.collection("discordRankBotUsers").find(mentionedQuery).toArray();
+
+                        if (mentioneddbres.length !== 0) {
+                            usersToCheck.push(mentioneddbres[0].scId);
+                            foundComparableUser = true;
+                        }
+                    }
+
+                    else if (!args[0].includes("<")) {
+                        await fetch(`https://new.scoresaber.com/api/player/${args[0]}/full`)
+                            .then(res => res.json())
+                            .then(res => {
+                                console.log(res);
+                                if (res.playerInfo) {
+                                    console.log("added user from id");
+                                    users.push(res);
+                                    foundComparableUser = true;
+                                }
+                            })
+                        usersFlipped = true;
+                    }
+
+                    for (let i = 0; i < usersToCheck.length; i++) {
+                        console.log(i + " : " + usersToCheck[i]);
+                        await fetch(`https://new.scoresaber.com/api/player/${usersToCheck[i]}/full`)
+                            .then(res => res.json())
+                            .then(res => {
+                                users.push(res);
+                            });
+                    }
+
+                    if (usersFlipped) users = await users.reverse();
+
+                    if (foundComparableUser === false && !user.bot) {
+                        message.channel.send("The pinged user does not seem to be registered.")
+                    }
+
+                    else if (users[0] && users[1] && users[0].playerInfo.playerId === users[1].playerInfo.playerId) {
+                        message.channel.send("Stop trying to compare yourself to yourself...");
+                    }
+                    else if (users[0] && users[1] && users[0].playerInfo.playerId !== users[1].playerInfo.playerId) {
+                        console.log(`Comparing users: ${users[0].playerInfo.playerName} and ${users[1].playerInfo.playerName}.`)
+
+                        function Emote(val1, val2) {
+                            if (val1 > val2) return message.guild.emojis.cache.find(emoji => emoji.name === "small_green_triangle_up");
+                            else return ":small_red_triangle_down:";
+                        }
+
+                        function BiggerOrSmaller(val1, val2) {
+                            if (val1 > val2) return `>`;
+                            else return `<`;
+                        }
+
+                        let ppDifference = ((users[0].playerInfo.pp) - (users[1].playerInfo.pp)).toFixed(2);
+                        let ppBiggerOrSmaller = BiggerOrSmaller(users[0].playerInfo.pp, users[1].playerInfo.pp);
+
+                        let accDifference = ((users[0].scoreStats.averageRankedAccuracy) - (users[1].scoreStats.averageRankedAccuracy)).toFixed(2);
+                        let accBiggerOrSmaller = BiggerOrSmaller(users[0].scoreStats.averageRankedAccuracy, users[1].scoreStats.averageRankedAccuracy);
+
+                        let rankDifference = ((users[0].playerInfo.rank) - (users[1].playerInfo.rank));
+                        let rankBiggerOrSmaller = BiggerOrSmaller(users[0].playerInfo.rank, users[1].playerInfo.rank);
+
+                        const embed = new Discord.MessageEmbed()
+                            .setAuthor(`Comparing`, `https://new.scoresaber.com${users[0].playerInfo.avatar}`, ``)
+                            .setThumbnail(`https://new.scoresaber.com${users[1].playerInfo.avatar}`)
+                            .setColor('#513dff')
+                            .addField(`Users`, `[${users[0].playerInfo.playerName}](https://new.scoresaber.com/u/${usersToCheck[0]} 'Scoresaber - ${users[0].playerInfo.playerName}') - [${users[1].playerInfo.playerName}](https://new.scoresaber.com/u/${users[1].playerInfo.playerId} 'Scoresaber - ${users[1].playerInfo.playerName}')`)
+                            .addFields(
+                                {
+                                    name: `PP`, value: `${Math.round((users[0].playerInfo.pp) * 100) / 100} ${ppBiggerOrSmaller} ${Math.round((users[1].playerInfo.pp) * 100) / 100} \n${Emote(users[0].playerInfo.pp, users[1].playerInfo.pp)}  **${Math.round((ppDifference) * 100) / 100}pp**`
+                                },
+                                {
+                                    name: `Acc`, value: `${Math.round((users[0].scoreStats.averageRankedAccuracy) * 100) / 100}% ${accBiggerOrSmaller} ${Math.round((users[1].scoreStats.averageRankedAccuracy) * 100) / 100}% \n${Emote(users[0].scoreStats.averageRankedAccuracy, users[1].scoreStats.averageRankedAccuracy)}  **${Math.round((accDifference) * 100) / 100}%**`
+                                },
+                                {
+                                    name: `Rank`, value: `${users[0].playerInfo.rank} ${rankBiggerOrSmaller} ${users[1].playerInfo.rank} \n${Emote(users[1].playerInfo.rank, users[0].playerInfo.rank)} **${rankDifference * -1}**`
+                                }
+                            )
+                            .setTimestamp()
+                            .setFooter(`Remember to hydrate`);
+
+                        message.channel.send(embed);
+                    }
+                }
+                else {
+                    message.channel.send("You are propably not registered...")
+                }
+            }
+
+            catch (err) {
+                message.channel.send("Something went terribly wrong, either you fucked something up scoresaber or something else might be down...");
+                console.log(err);
+            }
         }
 
         if (command === 'toggleupdates') {
             if (checkIfOwner(message)) {
-                message.channel.send(`Toggled automatic updates for roles.`)
+                if (!automaticUpdatesOnOff) {
+                    await message.channel.send(`Automatic updates are now on.`);
+                }
+                else {
+                    await message.channel.send(`Automatic updates are now off.`);
+                }
                 toggleUpdates(message, db);
             }
         }
 
         if (command === 'updateallroles') {
             if (checkIfOwner(message)) {
-                await console.log(`Starting updates`)
-                await message.channel.send(`Updating all registered user roles.`)
+                await console.log(`Starting updates`);
+                await message.channel.send(`Updating all registered user roles.`);
                 try {
                     await UpdateAllRoles(db);
-                    await message.channel.send(`Finished.`);
                     await console.log(`Completed role updates.`);
+                    await message.channel.send(`Finished.`);
                 }
                 catch (err) {
-                    await message.channel.send(`Failed to update all roles, check your logs dumfus`)
-                    console.log(err)
+                    await message.channel.send(`Failed to update all roles, check your logs dumfus`);
+                    console.log(err);
                 }
-
-
             }
         }
+
         if (command === "me") {
             const query = { discId: message.author.id };
             db.collection("discordRankBotUsers").find(query).toArray(function (err, dbres) {
                 if (err) throw err;
                 if (!dbres[0]?.scId) {
-                    message.channel.send(`I'm sorry I could not find you in the database.`);
+                    message.channel.send(`I'm sorry I could not find you in the database.\nTry using ${prefix}addme <scoresaberid> to get added into this awesome system.`);
                 }
                 else {
                     fetch(`https://new.scoresaber.com/api/player/${dbres[0].scId}/full`)
@@ -218,7 +389,7 @@ async function commandHandler(db) {
 
         if (command === "deleteme") {
             removeOtherRankRoles(message);
-            const myquery = { discId: message.author.id }
+            const myquery = { discId: message.author.id };
             db.collection("discordRankBotUsers").find(myquery).toArray(function (err, dbres) {
                 if (err) throw err;
                 if (!dbres[0]?.discId) {
@@ -227,7 +398,7 @@ async function commandHandler(db) {
                 else {
                     db.collection("discordRankBotUsers").deleteOne(myquery, function (err) {
                         if (err) throw err;
-                        console.log(`${message.author.username} deleted from the database`)
+                        console.log(`${message.author.username} deleted from the database`);
                     })
                     message.channel.send("I removed your rankrole & deleted you from the database.");
                 }
@@ -239,35 +410,52 @@ async function commandHandler(db) {
                 return message.channel.send(`Please use a scoresaber id... ${message.author}!`);
             }
             else if (args) {
-                let myobj = { discId: message.author.id, scId: args[0], discName: message.author.username };
-                let query = { discId: message.author.id };
                 fetch(`https://new.scoresaber.com/api/player/${args[0]}/full`)
                     .then(res => res.json())
                     .then(res => {
-                        if (res.playerInfo.country === config.country) {
-                            message.channel.send("Trying to add you...");
-                            db.collection("discordRankBotUsers").find(query).toArray(function (err, dbres) {
-                                if (err) throw err;
-                                if (dbres?.length < 1) {
-                                    db.collection("discordRankBotUsers").insertOne(myobj, function (err) {
-                                        if (err) throw err;
-                                        console.log(`inserted ${message.author.username} with sc ${res.playerInfo.playerName}`);
-                                        message.channel.send(`... it worked, you have been added.`);
-                                    });
-                                }
-                                else {
-                                    message.channel.send("You propably already exist in the database...");
-                                    console.log(`${message.author.username} tried to add themself to the db but alrdy existed.`);
-                                }
-                            })
-                        }
-                        else {
-                            message.channel.send("I'm sorry this is not available for international players.")
-                        }
+                        let myobj = { discId: message.author.id, scId: args[0], discName: message.author.username, country: res.playerInfo.country };
+                        let query = { discId: message.author.id };
+
+                        db.collection("discordRankBotUsers").find(query).toArray(function (err, dbres) {
+                            if (err) throw err;
+                            if (dbres?.length < 1) {
+                                db.collection("discordRankBotUsers").insertOne(myobj, function (err) {
+                                    if (err) throw err;
+                                    console.log(`inserted ${message.author.username} with sc ${res.playerInfo.playerName}`);
+
+                                    function DMuser() {
+                                        message.author.send("You have successfully registered to the Finnish Beat Saber community discord. \nRemember to check the rules in the #info-etc channel and for further bot interaction go to #botstuff and enjoy your stay.")
+                                    }
+
+                                    if (res.playerInfo.country === config.country) {
+                                        if (message.member.roles.cache.some(role => role.name === 'landed')) {
+                                            let addRole = message.guild.roles.cache.find(role => role.name === "Verified");
+                                            message.member.roles.set([addRole])
+                                                .then(DMuser())
+                                                .catch(console.log);
+                                        }
+                                        else message.channel.send(`You have been added and your role will be set with the next update, or if you are impatient you can run ${prefix}roleme.`);
+                                    }
+                                    else {
+                                        if (message.member.roles.cache.some(role => role.name === 'landed')) {
+                                            let addRole = message.guild.roles.cache.find(role => role.name === "Guest");
+                                            message.member.roles.set([addRole])
+                                                .then(DMuser())
+                                                .catch(console.log);
+                                        }
+                                        else message.channel.send("You have been added but unfortunately you will not get a role based on your rank as its not supported for international players.");
+                                    }
+                                });
+                            }
+                            else {
+                                message.channel.send("You propably already exist in the database...");
+                                console.log(`${message.author.username} tried to add themself to the db but alrdy existed.`);
+                            }
+                        })
                     })
                     .catch(err => {
                         console.log(err);
-                        message.channel.send("Something went terribly wrong, check your scoresaber id and try again.")
+                        message.channel.send("Something went terribly wrong, check your scoresaber id and try again.");
                     })
             }
         }
