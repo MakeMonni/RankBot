@@ -5,11 +5,21 @@ const client = new Discord.Client();
 const prefix = config.prefix
 const fetch = require('node-fetch');
 
+const Bottleneck = require(`bottleneck`);
+
 const MongoClient = require('mongodb').MongoClient;
 const assert = require('assert');
 
 const url = 'mongodb://localhost:27017';
 const dbName = 'discordRankBot';
+
+const limiter = new Bottleneck({
+    reservoir: 70,
+    reservoirRefreshAmount: 70,
+    reservoirRefreshInterval: 60 * 1000,
+
+    minTime: 860
+});
 
 MongoClient.connect(url, async (err, client) => {
     assert.strictEqual(null, err);
@@ -62,17 +72,28 @@ function checkIfOwner(message) {
     else message.channel.send(`Sorry you lack the permissions for this command.`);
 }
 
+async function getUserFromScoreSaber(scoreSaberID) {
+    let user = await limiter.schedule(async () => fetch(`https://new.scoresaber.com/api/player/${scoreSaberID}/full`)
+        .then(res => res.json())
+        .catch(err => { console.log(`${err} \nAPI RESPONSE: ${res}`) }));
+
+    if (!user.playerInfo) return null;
+    else return user;
+}
+
 async function UpdateAllRoles(db) {
     const dbres = await db.collection("discordRankBotUsers").find({ "country": config.country }).toArray();
     console.log(`${dbres.length} users to update.`);
 
-    const requests =
-        dbres
-            .map(user => `https://new.scoresaber.com/api/player/${user.scId}/full`)
-            .map(url => fetch(url).then(resp => resp.json()));
+    let responses = [];
+    for (let i = 0; i < dbres.length; i++) {
+        let user = await getUserFromScoreSaber(dbres[i].scId);
 
-    const responses = await Promise.all(requests);
+        await responses.push(user);
+    }
+
     const playerRanks = responses.map(response => response.playerInfo.countryRank);
+
     console.log(`player ranks: ${playerRanks}`);
 
     const Gid = config.guildId;
@@ -90,36 +111,44 @@ async function UpdateAllRoles(db) {
             const memberRoles = member.roles.cache.array().filter(role => !role.name.startsWith("Top"));
             const playerRank = playerRanks[i];
 
-            if (playerRank !== 0) {
-                let addRole = null;
-                if (playerRank <= 5) {
-                    addRole = guild.roles.cache.filter(role => role.name === "Top 5").first();
-                }
-                else if (playerRank <= 10) {
-                    addRole = guild.roles.cache.filter(role => role.name === "Top 10").first();
-                }
-                else if (playerRank <= 15) {
-                    addRole = guild.roles.cache.filter(role => role.name === "Top 15").first();
-                }
-                else if (playerRank <= 20) {
-                    addRole = guild.roles.cache.filter(role => role.name === "Top 20").first();
-                }
-                else if (playerRank <= 25) {
-                    addRole = guild.roles.cache.filter(role => role.name === "Top 25").first();
-                }
-                else if (playerRank <= 50) {
-                    addRole = guild.roles.cache.filter(role => role.name === "Top 50").first();
-                }
-                else if (playerRank > 50) {
-                    addRole = guild.roles.cache.filter(role => role.name === "Top 50+").first();
-                }
-
-                console.log(`Adding role ${addRole.name} to user ${dbres[i].discName}...`);
-                memberRoles.push(addRole);
-                member.roles.set(memberRoles);
-                console.log(`...Success`);
+            if (!playerRank) {
+                console.log(`There was an error with this user, most likely an API error, user: ${member}`)
+                continue
             }
+
+            let addRole = null;
+
+            if (playerRank == 0) {
+                addRole = guild.roles.cache.filter(role => role.name === "Inactive").first();
+            }
+            else if (playerRank <= 5) {
+                addRole = guild.roles.cache.filter(role => role.name === "Top 5").first();
+            }
+            else if (playerRank <= 10) {
+                addRole = guild.roles.cache.filter(role => role.name === "Top 10").first();
+            }
+            else if (playerRank <= 15) {
+                addRole = guild.roles.cache.filter(role => role.name === "Top 15").first();
+            }
+            else if (playerRank <= 20) {
+                addRole = guild.roles.cache.filter(role => role.name === "Top 20").first();
+            }
+            else if (playerRank <= 25) {
+                addRole = guild.roles.cache.filter(role => role.name === "Top 25").first();
+            }
+            else if (playerRank <= 50) {
+                addRole = guild.roles.cache.filter(role => role.name === "Top 50").first();
+            }
+            else if (playerRank > 50) {
+                addRole = guild.roles.cache.filter(role => role.name === "Top 50+").first();
+            }
+
+            console.log(`Adding role ${addRole.name} to user ${dbres[i].discName}...`);
+            memberRoles.push(addRole);
+            member.roles.set(memberRoles);
+            console.log(`...Success`);
         }
+
         catch (err) {
             console.log(`Failed to automaticly update role for user: ${dbres[i].discName}.  Reason: ${err}`);
             continue;
@@ -132,7 +161,6 @@ async function getUserFromMention(mention) {
     // The id is the first and only match found by the RegEx.
     const matches = mention.match(/^<@!?(\d+)>$/);
 
-    console.log(mention);
     // If supplied variable was not a mention, matches will be null instead of an array.
     if (!matches) return;
 
@@ -190,6 +218,11 @@ async function updates(message, db) {
 async function commandHandler(db) {
     client.on('message', async (message) => {
         if (!message.content.startsWith(prefix) || message.author.bot) return;
+        if (message.channel.type === "dm") {
+            message.channel.send("Sorry this bot does not take commands in DMs")
+            return
+        }
+
 
         const args = message.content.slice(prefix.length).trim().split(' ');
         const command = args.shift().toLowerCase();
@@ -202,16 +235,22 @@ async function commandHandler(db) {
             if (checkIfOwner(message)) {
                 const dbres = await db.collection("discordRankBotUsers").find({}).toArray();
                 for (let i = 0; i < dbres.length; i++) {
-                    await fetch(`https://new.scoresaber.com/api/player/${dbres[i].scId}/full`)
-                        .then(res => res.json())
-                        .then(res => {
-                            let myquery = { discId: dbres[i].discId };
-                            let newvalue = { $set: { country: res.playerInfo.country } };
-                            db.collection("discordRankBotUsers").updateOne(myquery, newvalue, function (err, updateres) {
-                                if (err) console.log(err);
-                                else console.log(`Updated country for user ${dbres[i].discName}`);
-                            })
+                    let user = await getUserFromScoreSaber(dbres[i].scId);
+                    if(user)
+                    {
+                        let myquery = { discId: dbres[i].discId };
+                        let newvalue = { $set: { country: user.playerInfo.country } };
+    
+                        db.collection("discordRankBotUsers").updateOne(myquery, newvalue, function (err) {
+                            if (err) console.log(err);
+                            else console.log(`Updated country for user ${dbres[i].discName}`);
                         });
+                    }
+                    else
+                    {
+                        console.log(`Could not update country for a user, scID:${dbres[i].scId} discName:${dbres[i].discName}`)
+                        continue;
+                    } 
                 }
                 message.channel.send("Completed country updates.")
             }
@@ -225,6 +264,8 @@ async function commandHandler(db) {
 
         if (command === 'compare') {
             try {
+                console.log("Starting a comparison")
+
                 let usersToCheck = [];
                 let users = [];
 
@@ -233,9 +274,8 @@ async function commandHandler(db) {
 
                 if (dbres.length !== 0) {
                     usersToCheck.push(dbres[0].scId);
-
                     let user = await getUserFromMention(args[0]);
-                    console.log(user);
+
                     let usersFlipped = false;
                     let foundComparableUser = false;
 
@@ -245,7 +285,6 @@ async function commandHandler(db) {
 
                     else if (user && args[0]) {
                         const mentionedQuery = { discId: user.id };
-                        console.log(mentionedQuery);
                         const mentioneddbres = await db.collection("discordRankBotUsers").find(mentionedQuery).toArray();
 
                         if (mentioneddbres.length !== 0) {
@@ -255,26 +294,21 @@ async function commandHandler(db) {
                     }
 
                     else if (!args[0].includes("<")) {
-                        await fetch(`https://new.scoresaber.com/api/player/${args[0]}/full`)
-                            .then(res => res.json())
-                            .then(res => {
-                                console.log(res);
-                                if (res.playerInfo) {
-                                    console.log("added user from id");
-                                    users.push(res);
-                                    foundComparableUser = true;
-                                }
-                            })
+                        let scuser = await getUserFromScoreSaber(args[0]);
+
+                        if (scuser.playerInfo) {
+                            console.log(`Added a user from args ${args[0]}`)
+                            users.push(scuser);
+                            foundComparableUser = true;
+                        }
+
                         usersFlipped = true;
                     }
 
                     for (let i = 0; i < usersToCheck.length; i++) {
                         console.log(i + " : " + usersToCheck[i]);
-                        await fetch(`https://new.scoresaber.com/api/player/${usersToCheck[i]}/full`)
-                            .then(res => res.json())
-                            .then(res => {
-                                users.push(res);
-                            });
+                        let scuser = await getUserFromScoreSaber(usersToCheck[i]);
+                        users.push(scuser);
                     }
 
                     if (usersFlipped) users = await users.reverse();
@@ -371,18 +405,19 @@ async function commandHandler(db) {
 
         if (command === "me") {
             const query = { discId: message.author.id };
-            db.collection("discordRankBotUsers").find(query).toArray(function (err, dbres) {
+            db.collection("discordRankBotUsers").find(query).toArray(async function (err, dbres) {
                 if (err) throw err;
                 if (!dbres[0]?.scId) {
                     message.channel.send(`I'm sorry I could not find you in the database.\nTry using ${prefix}addme <scoresaberid> to get added into this awesome system.`);
                 }
                 else {
-                    fetch(`https://new.scoresaber.com/api/player/${dbres[0].scId}/full`)
-                        .then(res => res.json())
-                        .then(res => {
-                            console.log(`${res.playerInfo.playerName} r:${res.playerInfo.countryRank}`);
-                            message.channel.send(`${res.playerInfo.playerName} is rank ${res.playerInfo.countryRank} in ${res.playerInfo.country} with ${res.playerInfo.pp}pp`);
-                        });
+                    let user = await getUserFromScoreSaber(dbres[0].scId);
+
+                    if (user) {
+                        console.log(`${user.playerInfo.playerName} r:${user.playerInfo.countryRank}`);
+                        message.channel.send(`${user.playerInfo.playerName} is rank ${user.playerInfo.countryRank} in ${user.playerInfo.country} with ${user.playerInfo.pp}pp`);
+                    }
+                    else message.channel.send(`Seems like we ran into an error, you should try again later`)
                 }
             })
         }
@@ -410,53 +445,52 @@ async function commandHandler(db) {
                 return message.channel.send(`Please use a scoresaber id... ${message.author}!`);
             }
             else if (args) {
-                fetch(`https://new.scoresaber.com/api/player/${args[0]}/full`)
-                    .then(res => res.json())
-                    .then(res => {
-                        let myobj = { discId: message.author.id, scId: args[0], discName: message.author.username, country: res.playerInfo.country };
-                        let query = { discId: message.author.id };
+                let user = await getUserFromScoreSaber(args[0]);
 
-                        db.collection("discordRankBotUsers").find(query).toArray(function (err, dbres) {
+                if (!user) {
+                    message.channel.send("Something went terribly wrong, check your scoresaber id and try again.")
+                    return
+                }
+
+                let myobj = { discId: message.author.id, scId: args[0], discName: message.author.username, country: user.playerInfo.country };
+                let query = { discId: message.author.id };
+
+                db.collection("discordRankBotUsers").find(query).toArray(function (err, dbres) {
+                    if (err) throw err;
+                    if (dbres?.length < 1) {
+                        db.collection("discordRankBotUsers").insertOne(myobj, function (err) {
                             if (err) throw err;
-                            if (dbres?.length < 1) {
-                                db.collection("discordRankBotUsers").insertOne(myobj, function (err) {
-                                    if (err) throw err;
-                                    console.log(`inserted ${message.author.username} with sc ${res.playerInfo.playerName}`);
+                            console.log(`inserted ${message.author.username} with sc ${user.playerInfo.playerName}`);
 
-                                    function DMuser() {
-                                        message.author.send("You have successfully registered to the Finnish Beat Saber community discord. \nRemember to check the rules in the #info-etc channel and for further bot interaction go to #botstuff and enjoy your stay.")
-                                    }
+                            function DMuser() {
+                                message.author.send("You have successfully registered to the Finnish Beat Saber community discord. \nRemember to check the rules in the #info-etc channel and for further bot interaction go to #botstuff and enjoy your stay.")
+                            }
 
-                                    if (res.playerInfo.country === config.country) {
-                                        if (message.member.roles.cache.some(role => role.name === 'landed')) {
-                                            let addRole = message.guild.roles.cache.find(role => role.name === "Verified");
-                                            message.member.roles.set([addRole])
-                                                .then(DMuser())
-                                                .catch(console.log);
-                                        }
-                                        else message.channel.send(`You have been added and your role will be set with the next update, or if you are impatient you can run ${prefix}roleme.`);
-                                    }
-                                    else {
-                                        if (message.member.roles.cache.some(role => role.name === 'landed')) {
-                                            let addRole = message.guild.roles.cache.find(role => role.name === "Guest");
-                                            message.member.roles.set([addRole])
-                                                .then(DMuser())
-                                                .catch(console.log);
-                                        }
-                                        else message.channel.send("You have been added but unfortunately you will not get a role based on your rank as its not supported for international players.");
-                                    }
-                                });
+                            if (user.playerInfo.country === config.country) {
+                                if (message.member.roles.cache.some(role => role.name === 'landed')) {
+                                    let addRole = message.guild.roles.cache.find(role => role.name === "Verified");
+                                    message.member.roles.set([addRole])
+                                        .then(DMuser())
+                                        .catch(console.log);
+                                }
+                                else message.channel.send(`You have been added and your role will be set with the next update, or if you are impatient you can run ${prefix}roleme.`);
                             }
                             else {
-                                message.channel.send("You propably already exist in the database...");
-                                console.log(`${message.author.username} tried to add themself to the db but alrdy existed.`);
+                                if (message.member.roles.cache.some(role => role.name === 'landed')) {
+                                    let addRole = message.guild.roles.cache.find(role => role.name === "Guest");
+                                    message.member.roles.set([addRole])
+                                        .then(DMuser())
+                                        .catch(console.log);
+                                }
+                                else message.channel.send("You have been added but unfortunately you will not get a role based on your rank as its not supported for international players.");
                             }
-                        })
-                    })
-                    .catch(err => {
-                        console.log(err);
-                        message.channel.send("Something went terribly wrong, check your scoresaber id and try again.");
-                    })
+                        });
+                    }
+                    else {
+                        message.channel.send("You propably already exist in the database...");
+                        console.log(`${message.author.username} tried to add themself to the db but alrdy existed.`);
+                    }
+                })
             }
         }
 
@@ -469,7 +503,8 @@ async function commandHandler(db) {
                     "Top 20",
                     "Top 15",
                     "Top 10",
-                    "Top 5"
+                    "Top 5",
+                    "Inactive"
                 ];
 
                 for (let roleName of roleNames)
@@ -484,55 +519,59 @@ async function commandHandler(db) {
 
         if (command === "roleme") {
             let query = { discId: message.author.id }
-            db.collection("discordRankBotUsers").find(query).toArray(function (err, dbres) {
+            db.collection("discordRankBotUsers").find(query).toArray(async function (err, dbres) {
                 if (!dbres[0]?.scId) {
                     message.channel.send(`I'm sorry I could not find you in the database.`);
                 }
                 else {
                     if (err) throw err;
                     console.log(dbres[0].scId);
-                    fetch(`https://new.scoresaber.com/api/player/${dbres[0].scId}/full`)
-                        .then(res => res.json())
-                        .then(res => {
-                            console.log(`Player: ${res.playerInfo.playerName} countryrank: ${res.playerInfo.countryRank}`);
-                            const msgMembRole = message.member.roles;
-                            try {
-                                removeOtherRankRoles(message);
-                                if (res.playerInfo.countryRank <= 5) {
-                                    const role = message.guild.roles.cache.find(role => role.name === "Top 5");
-                                    msgMembRole.add(role);
-                                }
-                                else if (res.playerInfo.countryRank <= 10) {
-                                    const role = message.guild.roles.cache.find(role => role.name === "Top 10");
-                                    msgMembRole.add(role);
-                                }
-                                else if (res.playerInfo.countryRank <= 15) {
-                                    const role = message.guild.roles.cache.find(role => role.name === "Top 15");
-                                    msgMembRole.add(role);
-                                }
-                                else if (res.playerInfo.countryRank <= 20) {
-                                    const role = message.guild.roles.cache.find(role => role.name === "Top 20");
-                                    msgMembRole.add(role);
-                                }
-                                else if (res.playerInfo.countryRank <= 25) {
-                                    const role = message.guild.roles.cache.find(role => role.name === "Top 25");
-                                    msgMembRole.add(role);
-                                }
-                                else if (res.playerInfo.countryRank <= 50) {
-                                    const role = message.guild.roles.cache.find(role => role.name === "Top 50");
-                                    msgMembRole.add(role);
-                                }
-                                else if (res.playerInfo.countryRank > 50) {
-                                    const role = message.guild.roles.cache.find(role => role.name === "Top 50+");
-                                    msgMembRole.add(role);
-                                }
-                                message.channel.send(`I added an approriate role for your rank.`)
-                            }
-                            catch {
-                                message.channel.send("It seems I was unable to add a role approriate for your rank.")
-                                console.log(err);
-                            }
-                        });
+                    let user = await getUserFromScoreSaber(dbres[0].scId);
+
+                    if (!user.playerInfo) {
+                        message.channel.send("Something went terribly wrong, you can try again in a moment.")
+                        console.log(`Tried to make an API call with id:${args[0]} but got the response ${user}`)
+                        return
+                    }
+
+                    console.log(`Player: ${user.playerInfo.playerName} countryrank: ${user.playerInfo.countryRank}`);
+                    const msgMembRole = message.member.roles;
+                    try {
+                        removeOtherRankRoles(message);
+                        if (user.playerInfo.countryRank <= 5) {
+                            const role = message.guild.roles.cache.find(role => role.name === "Top 5");
+                            msgMembRole.add(role);
+                        }
+                        else if (user.playerInfo.countryRank <= 10) {
+                            const role = message.guild.roles.cache.find(role => role.name === "Top 10");
+                            msgMembRole.add(role);
+                        }
+                        else if (user.playerInfo.countryRank <= 15) {
+                            const role = message.guild.roles.cache.find(role => role.name === "Top 15");
+                            msgMembRole.add(role);
+                        }
+                        else if (user.playerInfo.countryRank <= 20) {
+                            const role = message.guild.roles.cache.find(role => role.name === "Top 20");
+                            msgMembRole.add(role);
+                        }
+                        else if (user.playerInfo.countryRank <= 25) {
+                            const role = message.guild.roles.cache.find(role => role.name === "Top 25");
+                            msgMembRole.add(role);
+                        }
+                        else if (user.playerInfo.countryRank <= 50) {
+                            const role = message.guild.roles.cache.find(role => role.name === "Top 50");
+                            msgMembRole.add(role);
+                        }
+                        else if (user.playerInfo.countryRank > 50) {
+                            const role = message.guild.roles.cache.find(role => role.name === "Top 50+");
+                            msgMembRole.add(role);
+                        }
+                        message.channel.send(`I added an approriate role for your rank.`)
+                    }
+                    catch {
+                        message.channel.send("It seems I was unable to add a role approriate for your rank.")
+                        console.log(err);
+                    };
                 }
             })
         }
