@@ -75,7 +75,7 @@ function checkIfOwner(message) {
 async function getUserFromScoreSaber(scoreSaberID) {
     let user = await limiter.schedule(async () => fetch(`https://new.scoresaber.com/api/player/${scoreSaberID}/full`)
         .then(res => res.json())
-        .catch(err => { console.log(`${err} \nAPI RESPONSE: ${res}`) }));
+        .catch(err, res => { console.log(`${err} \nAPI RESPONSE: ${res}`) }));
 
     if (!user.playerInfo) return null;
     else return user;
@@ -112,7 +112,7 @@ async function UpdateAllRoles(db) {
             const playerRank = playerRanks[i];
 
             if (!playerRank) {
-                console.log(`There was an error with this user, most likely an API error, user: ${member}`)
+                console.log(`There was an error with this user, most likely an API error, user: ${dbres[i].discName} sc:${dbres[i].scId}`)
                 continue
             }
 
@@ -231,26 +231,26 @@ async function commandHandler(db) {
             message.channel.send("Haha yes good job testing :)");
         }
 
+        
+
         if (command === 'updateallcountry') {
             if (checkIfOwner(message)) {
                 const dbres = await db.collection("discordRankBotUsers").find({}).toArray();
                 for (let i = 0; i < dbres.length; i++) {
                     let user = await getUserFromScoreSaber(dbres[i].scId);
-                    if(user)
-                    {
+                    if (user) {
                         let myquery = { discId: dbres[i].discId };
                         let newvalue = { $set: { country: user.playerInfo.country } };
-    
+
                         db.collection("discordRankBotUsers").updateOne(myquery, newvalue, function (err) {
                             if (err) console.log(err);
                             else console.log(`Updated country for user ${dbres[i].discName}`);
                         });
                     }
-                    else
-                    {
+                    else {
                         console.log(`Could not update country for a user, scID:${dbres[i].scId} discName:${dbres[i].discName}`)
                         continue;
-                    } 
+                    }
                 }
                 message.channel.send("Completed country updates.")
             }
