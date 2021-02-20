@@ -73,12 +73,18 @@ function checkIfOwner(message) {
 }
 
 async function getUserFromScoreSaber(scoreSaberID) {
-    let user = await limiter.schedule(async () => fetch(`https://new.scoresaber.com/api/player/${scoreSaberID}/full`)
-        .then(res => res.json())
-        .catch(err, res => { console.log(`${err} \nAPI RESPONSE: ${res}`) }));
+    try {
+        let user = await limiter.schedule(async () => fetch(`https://new.scoresaber.com/api/player/${scoreSaberID}/full`)
+            .then(res => res.json())
+            .catch(err => { console.log(`Had an error: ${err} with scID:${scoreSaberID}`) }));
 
-    if (!user.playerInfo) return null;
-    else return user;
+        if (!user.playerInfo) return null;
+        else return user;
+    }
+    catch (err) {
+        console.log(`Had an error: ${err} with scID:${scoreSaberID}`);
+        return null
+    }
 }
 
 async function UpdateAllRoles(db) {
@@ -91,10 +97,6 @@ async function UpdateAllRoles(db) {
 
         await responses.push(user);
     }
-
-    const playerRanks = responses.map(response => response.playerInfo.countryRank);
-
-    console.log(`player ranks: ${playerRanks}`);
 
     const Gid = config.guildId;
 
@@ -109,16 +111,18 @@ async function UpdateAllRoles(db) {
             }
 
             const memberRoles = member.roles.cache.array().filter(role => !role.name.startsWith("Top"));
-            const playerRank = playerRanks[i];
 
-            if (!playerRank) {
+            if (responses[i].playerInfo.countryRank === 0) playerRank = -1;
+
+            if (!responses[i].playerInfo.countryRank) {
                 console.log(`There was an error with this user, most likely an API error, user: ${dbres[i].discName} sc:${dbres[i].scId}`)
                 continue
             }
 
+            let playerRank = responses[i].playerInfo.countryRank
             let addRole = null;
 
-            if (playerRank == 0) {
+            if (playerRank === -1) {
                 addRole = guild.roles.cache.filter(role => role.name === "Inactive").first();
             }
             else if (playerRank <= 5) {
@@ -150,7 +154,7 @@ async function UpdateAllRoles(db) {
         }
 
         catch (err) {
-            console.log(`Failed to automaticly update role for user: ${dbres[i].discName}.  Reason: ${err}`);
+            console.log(`Failed to automaticly update role for user: ${dbres[i].discName}. Reason: ${err}, scID: ${dbres[i].scId}`);
             continue;
         }
     };
@@ -231,7 +235,47 @@ async function commandHandler(db) {
             message.channel.send("Haha yes good job testing :)");
         }
 
-        
+        /*
+        if (command === 'getranked') {
+
+            let maps = await fetch(`https://scoresaber.com/api.php?function=get-leaderboards&page=1&limit=${args[0]}&ranked={ranked_only}`)
+                .then(res => res.json())
+                .catch(err => { console.log(`${err}`) })
+
+            console.log(`Found: ${maps.songs.length}`);
+
+            let insertedMaps = 0;
+
+            for (let i = 0; i < maps.songs.length; i++) {
+                let map = maps.songs[i];
+                const query = { hash: map.id, diff: map.diff };
+                const dbres = await db.collection("scoresaberRankedMaps").find(query).toArray();
+                if (!dbres[0]) {
+                    let rankedStatus = false;
+                    if (map.ranked === 1) rankedStatus = true;
+                    let object = {
+                        hash: map.id,
+                        name: map.name,
+                        songAuthor: map.songAuthorName,
+                        mapper: map.levelAuthorName,
+                        bpm: map.bpm,
+                        diff: map.diff,
+                        stars: map.stars,
+                        isRanked: rankedStatus
+                    };
+                    db.collection("scoresaberRankedMaps").insertOne(object, function (err) {
+                        if (err) throw err;
+
+                        insertedMaps++;
+                        console.log(`Inserted map: ${map.name} with hash: ${map.id}`)
+                    })
+                }
+                else {
+                    console.log(`Map already existed in the db ${map.name}.`)
+                }
+            }
+        };
+        */
 
         if (command === 'updateallcountry') {
             if (checkIfOwner(message)) {
