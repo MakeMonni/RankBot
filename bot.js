@@ -110,20 +110,22 @@ async function UpdateAllRoles(db) {
                 continue;
             }
 
-            const memberRoles = member.roles.cache.array().filter(role => !role.name.startsWith("Top"));
+            let playerRank = responses[i].playerInfo.countryRank;
+            let memberRoles = member.roles.cache.array().filter(role => !role.name.startsWith("Top"));
 
             if (responses[i].playerInfo.countryRank === 0) playerRank = -1;
 
-            if (!responses[i].playerInfo.countryRank) {
+            if (!playerRank) {
                 console.log(`There was an error with this user, most likely an API error, user: ${dbres[i].discName} sc:${dbres[i].scId}`)
                 continue
             }
 
-            let playerRank = responses[i].playerInfo.countryRank
+            let inactive = false;
             let addRole = null;
 
             if (playerRank === -1) {
-                addRole = guild.roles.cache.filter(role => role.name === "Inactive").first();
+                console.log(`${dbres[i].discName} seems to be inactive according to scoresaber, removing Top role...`);
+                inactive = true;
             }
             else if (playerRank <= 5) {
                 addRole = guild.roles.cache.filter(role => role.name === "Top 5").first();
@@ -147,8 +149,10 @@ async function UpdateAllRoles(db) {
                 addRole = guild.roles.cache.filter(role => role.name === "Top 50+").first();
             }
 
-            console.log(`Adding role ${addRole.name} to user ${dbres[i].discName}...`);
-            memberRoles.push(addRole);
+            if (!inactive) {
+                console.log(`Adding role ${addRole.name} to user ${dbres[i].discName}...`);
+                memberRoles.push(addRole);
+            }
             member.roles.set(memberRoles);
             console.log(`...Success`);
         }
