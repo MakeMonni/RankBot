@@ -877,7 +877,9 @@ async function commandHandler(db) {
                 return message.channel.send(`Please use a scoresaber id... ${message.author}!`);
             }
             else if (args) {
-                let user = await getUserFromScoreSaber(args[0]);
+                let id = args[0].replace(/\D/g,'');
+                console.log(id)
+                let user = await getUserFromScoreSaber(id);
 
                 if (!user) {
                     message.channel.send("Something went terribly wrong, check your scoresaber id and try again.")
