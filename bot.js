@@ -3,23 +3,59 @@ const config = require('./config.json')
 const Discord = require('discord.js');
 const client = new Discord.Client();
 const prefix = config.prefix
-const fetch = require('node-fetch');
 
 const Bottleneck = require(`bottleneck`);
+const fetch = require('node-fetch');
 
 const MongoClient = require('mongodb').MongoClient;
 const assert = require('assert');
 
+const fs = require('fs');
+
+const atob = require('atob');
+
 const url = 'mongodb://localhost:27017';
 const dbName = 'discordRankBot';
+
+const adminchannelID = `767029317741051944`
+
+const options = {
+    headers: { 'User-Agent': "FinnishBSDiscordBot/1.0.0" }
+}
 
 const limiter = new Bottleneck({
     reservoir: 70,
     reservoirRefreshAmount: 70,
     reservoirRefreshInterval: 60 * 1000,
 
-    minTime: 860
+    //minTime: 75
 });
+
+const BeatSaverLimiter = new Bottleneck({
+    reservoir: 60,
+    reservoirRefreshAmount: 60,
+    reservoirRefreshInterval: 60 * 60 * 1000,
+
+    minTime: 1000
+})
+
+limiter.on("failed", async (error, jobInfo) => {
+    const id = jobInfo.options.id;
+    console.warn(`Job ${id} failed: ${error}`);
+
+    if (jobInfo.retryCount < 2) {
+        console.log(`Retrying job ${id} in ${(jobInfo.retryCount + 1) * 250}ms`);
+        return 250 * (jobInfo.retryCount + 1);
+    }
+    else if (jobInfo.retryCount === 2) {
+        console.log(`Retrying job ${id} in 1 minute.`)
+        return 1000 * 60
+    }
+
+});
+
+limiter.on("retry", (error, jobInfo) => console.log(`Retrying ${jobInfo.options.id} soon.`));
+
 
 MongoClient.connect(url, async (err, client) => {
     assert.strictEqual(null, err);
@@ -27,14 +63,31 @@ MongoClient.connect(url, async (err, client) => {
     const db = client.db(dbName);
 
     await discordlogin();
-    await discordClientReady();
+    discordClientReady();
     await memberLeft(db);
+    await memberJoined();
 
     await commandHandler(db);
 });
 
+async function memberJoined() {
+    client.on('guildMemberAdd', member => {
+        const role = member.guild.roles.cache.find(role => role.name === "landed");
+        member.roles.add(role);
+
+        client.channels.cache.get(adminchannelID).send(`${member.user.username} joined the server.`)
+
+        setTimeout(newMemberTimerMessage, 1000 * 60 * 60 * 24, member);
+    })
+}
+
+function newMemberTimerMessage(member) {
+    client.channels.cache.get(`824082816673120276`).send(`${member} joined 24h ago`);
+}
+
 async function memberLeft(db) {
     client.on('guildMemberRemove', (member) => {
+        client.channels.cache.get(adminchannelID).send(`${member.user.username} left the server.`)
         const myquery = { discId: member.id };
         db.collection("discordRankBotUsers").find(myquery).toArray(function (err, dbres) {
             if (err) throw err;
@@ -58,9 +111,25 @@ async function discordlogin() {
 
 function discordClientReady() {
     client.on('ready', async () => {
-        await console.log('Ready to rumble!');
+        console.log('Ready to rumble!');
         await statusOff();
     });
+}
+
+function convertDiffNameVisual(diffName) {
+    if (diffName === "_ExpertPlus_SoloStandard") return "Expert+"
+    else if (diffName === "_Expert_SoloStandard") return "Expert"
+    else if (diffName === "_Hard_SoloStandard") return "Hard"
+    else if (diffName === "_Normal_SoloStandard") return "Normal"
+    else return "Easy"
+}
+
+function convertDiffNameBeatSaver(diffName) {
+    if (diffName === "_ExpertPlus_SoloStandard") return "expertPlus"
+    else if (diffName === "_Expert_SoloStandard") return "expert"
+    else if (diffName === "_Hard_SoloStandard") return "hard"
+    else if (diffName === "_Normal_SoloStandard") return "normal"
+    else return "easy"
 }
 
 async function statusOff() {
@@ -72,13 +141,166 @@ function checkIfOwner(message) {
     else message.channel.send(`Sorry you lack the permissions for this command.`);
 }
 
+async function getRecentScoresFromScoreSaber(scoreSaberID, db) {
+    let foundSeenPlay = false;
+    let pageOfScoreSaber = 1;
+    let insertedSongs = 0;
+    let updatedSongs = 0;
+
+    let dbresLatestScore = await db.collection("discordRankBotScores").find({ player: scoreSaberID }).sort({ date: -1 }).limit(1).toArray();
+
+    while (!foundSeenPlay) {
+        let executions = 0;
+        let res = await limiter.schedule({ id: `Recent ${scoreSaberID} page:${pageOfScoreSaber}` }, async () => fetch(`https://new.scoresaber.com/api/player/${scoreSaberID}/scores/recent/${pageOfScoreSaber}`)
+            .then(res => res.json())
+            .catch(err => { throw new Error("Failed api request: " + err) }));
+        console.log(`Page: ${pageOfScoreSaber}`);
+
+        executions++;
+        if (executions === 3) console.log(`Failed multiple times to get scores from ${scoreSaberID} page: ${pageOfScoreSaber}.`)
+        else {
+            for (let i = 0; i < res.scores?.length; i++) {
+
+                if (res.scores[i].timeSet == dbresLatestScore[0].date) {
+                    foundSeenPlay = true;
+                    break;
+                }
+                else {
+                    let type = await AddPlayToDb(res.scores[i], db, scoreSaberID);
+                    if (type === "Updated") updatedSongs++;
+                    else if (type === "Inserted") insertedSongs++;
+                }
+            }
+        }
+        pageOfScoreSaber++;
+    }
+    console.log(`Reached end of unseen plays for ${scoreSaberID}`);
+    console.log(`Inserted: ${insertedSongs} new plays and ${updatedSongs} updated songs.`)
+}
+
+async function getTopScoresFromScoreSaber(scoreSaberID, db) {
+    let reachedEndOfRanked = false;
+    let pageOfScoreSaber = 1;
+    let insertedSongs = 0;
+    let updatedSongs = 0;
+
+    while (!reachedEndOfRanked) {
+        let executions = 0;
+        let res = await limiter.schedule({ id: `Top ${scoreSaberID} page:${pageOfScoreSaber}` }, async () => fetch(`https://new.scoresaber.com/api/player/${scoreSaberID}/scores/top/${pageOfScoreSaber}`)
+            .then(res => res.json())
+            .catch(err => { throw new Error("Failed api request: " + err) }));
+        console.log(`Page: ${pageOfScoreSaber}`);
+
+        executions++;
+        if (executions === 3) console.log(`Failed multiple times to get scores from ${scoreSaberID} page: ${pageOfScoreSaber}.`)
+        else {
+            for (let i = 0; i < res.scores?.length; i++) {
+                if (res.scores[i].pp === 0) {
+                    reachedEndOfRanked = true;
+                }
+                else {
+                    let type = await AddPlayToDb(res.scores[i], db, scoreSaberID);
+                    if (type === "Updated") updatedSongs++;
+                    else if (type === "Inserted") insertedSongs++;
+                }
+            }
+        }
+        pageOfScoreSaber++;
+    }
+    console.log(`Reached end of ranked for ${scoreSaberID}`);
+    console.log(`Inserted: ${insertedSongs} new plays and ${updatedSongs} updated songs.`)
+}
+
+async function AddPlayToDb(playData, db, scoreSaberID) {
+    const query = { hash: playData.songHash, player: scoreSaberID, diff: playData.difficultyRaw };
+    const dbres = await db.collection("discordRankBotScores").find(query).toArray();
+
+    let isRanked = false;
+    if (playData.pp > 0) isRanked = true
+
+    if (!dbres[0] || dbres[0].score < playData.score) {
+        const play = {
+            leaderboardId: playData.leaderboardId,
+            score: playData.score,
+            hash: playData.songHash,
+            maxscore: playData.maxScore,
+            player: scoreSaberID,
+            diff: playData.difficultyRaw,
+            date: playData.timeSet,
+            ranked: isRanked
+        }
+        if (dbres[0] && dbres[0].score < playData.score) {
+            db.collection("discordRankBotUsers").replaceOne(dbres[0], play, function (err) {
+                if (err) console.log(err);
+                return "Updated"
+            });
+        }
+        else {
+            db.collection("discordRankBotScores").insertOne(play, function (err) {
+                if (err) console.log(err);
+                return "Inserted"
+            })
+        }
+    }
+}
+
+async function getBeatSaverMapDataGithub(db) {
+    console.log("Pulling scraped BeatSaver data from github.")
+
+    let githubData = await fetch(`https://api.github.com/repos/andruzzzhka/BeatSaberScrappedData/contents`)
+        .then(res => res.json())
+        .catch(err => { console.log(`${err}`) })
+
+    const sha = githubData[0].sha;
+
+    let data = await fetch(`https://api.github.com/repos/andruzzzhka/BeatSaberScrappedData/git/blobs/${sha}`, {
+        headers: {
+            Accept: "application/vnd.github.v3+json"
+        }
+    })
+        .then(res => res.json())
+        .catch(err => console.log(err))
+
+    const json = JSON.parse(atob(data.content));
+
+    for (let i = 0; i < json.length; i++) {
+        delete json[i]._id;
+        await db.collection("beatSaverLocal").update({ hash: json[i].hash }, json[i], {
+            upsert: true
+        })
+    }
+
+    db.collection("beatSaverLocal").createIndex({ hash: 1, key: 1 }, function (err, result) {
+        if (err) console.log(err);
+    });
+
+    console.log("Done pulling & inserting scraped BeatSaver data from github.")
+}
+
+async function getBeatSaverMapData(hash) {
+    await BeatSaverLimiter.schedule(async () => fetch(`https://beatsaver.com/api/maps/by-hash/${hash}`)
+        .then(res => res.json)
+        .then(res => {
+            console.log("Got data from BeatSaver instead of DB.");
+            console.log(res);
+            return res;
+        }))
+        .catch(err => console.log(err))
+}
+
 async function getUserFromScoreSaber(scoreSaberID) {
     try {
-        let user = await limiter.schedule(async () => fetch(`https://new.scoresaber.com/api/player/${scoreSaberID}/full`)
+        let executions = 0;
+        let user = await limiter.schedule({ id: `Userpage ${scoreSaberID} ` }, async () => fetch(`https://new.scoresaber.com/api/player/${scoreSaberID}/full`)
             .then(res => res.json())
-            .catch(err => { console.log(`Had an error: ${err} with scID:${scoreSaberID}`) }));
+            .catch(err => { throw new Error("Failed api request: " + err) }));
 
-        if (!user.playerInfo) return null;
+        executions++;
+
+        if (executions === 2) {
+            console.log(`Failed multiple times to get scores from ${scoreSaberID} page: ${pageOfScoreSaber}.`);
+            return null;
+        }
         else return user;
     }
     catch (err) {
@@ -95,7 +317,7 @@ async function UpdateAllRoles(db) {
     for (let i = 0; i < dbres.length; i++) {
         let user = await getUserFromScoreSaber(dbres[i].scId);
 
-        await responses.push(user);
+        responses.push(user);
     }
 
     const Gid = config.guildId;
@@ -124,7 +346,7 @@ async function UpdateAllRoles(db) {
             let addRole = null;
 
             if (playerRank === -1) {
-                console.log(`${dbres[i].discName} seems to be inactive according to scoresaber, removing Top role...`);
+                console.log(`${dbres[i].discName} seems to be inactive according to scoresaber, removing Top role.`);
                 inactive = true;
             }
             else if (playerRank <= 5) {
@@ -150,11 +372,10 @@ async function UpdateAllRoles(db) {
             }
 
             if (!inactive) {
-                console.log(`Adding role ${addRole.name} to user ${dbres[i].discName}...`);
+                console.log(`Adding role ${addRole.name} to user ${dbres[i].discName}.`);
                 memberRoles.push(addRole);
             }
             member.roles.set(memberRoles);
-            console.log(`...Success`);
         }
 
         catch (err) {
@@ -209,10 +430,10 @@ async function updates(message, db) {
         TimeRemainingHours = config.updateIntervalHours - 1;
         TimeRemainingMinutes = 59;
         await message.channel.send("Started an automatic role update");
-        await console.log(`Updating rank roles.`);
+        console.log(`Updating rank roles.`);
         await UpdateAllRoles(db);
         await message.channel.send("Finished.");
-        await console.log(`Completed role updates.`);
+        console.log(`Completed role updates.`);
 
     }
     else if (TimeRemainingMinutes === 0) {
@@ -231,55 +452,218 @@ async function commandHandler(db) {
             return
         }
 
-
         const args = message.content.slice(prefix.length).trim().split(' ');
         const command = args.shift().toLowerCase();
 
         if (command === 'test') {
-            message.channel.send("Haha yes good job testing :)");
+            message.channel.send("Haha yes nice test :)");
         }
 
-        /*
-        if (command === 'getranked') {
+        if (command === 'forcesaverdata') {
+            if(checkIfOwner(message))
+            {
+                getBeatSaverMapDataGithub(db);
+            }
+        }
 
-            let maps = await fetch(`https://scoresaber.com/api.php?function=get-leaderboards&page=1&limit=${args[0]}&ranked={ranked_only}`)
-                .then(res => res.json())
-                .catch(err => { console.log(`${err}`) })
+        if (command === 'snipelist') {
+            if(checkIfOwner(message))
+            {
+                message.channel.send("Gathering and comparing scores, this might take a moment.")
 
-            console.log(`Found: ${maps.songs.length}`);
-
-            let insertedMaps = 0;
-
-            for (let i = 0; i < maps.songs.length; i++) {
-                let map = maps.songs[i];
-                const query = { hash: map.id, diff: map.diff };
-                const dbres = await db.collection("scoresaberRankedMaps").find(query).toArray();
-                if (!dbres[0]) {
-                    let rankedStatus = false;
-                    if (map.ranked === 1) rankedStatus = true;
-                    let object = {
-                        hash: map.id,
-                        name: map.name,
-                        songAuthor: map.songAuthorName,
-                        mapper: map.levelAuthorName,
-                        bpm: map.bpm,
-                        diff: map.diff,
-                        stars: map.stars,
-                        isRanked: rankedStatus
-                    };
-                    db.collection("scoresaberRankedMaps").insertOne(object, function (err) {
-                        if (err) throw err;
-
-                        insertedMaps++;
-                        console.log(`Inserted map: ${map.name} with hash: ${map.id}`)
-                    })
+                let dbres = await db.collection("discordRankBotUsers").findOne({ discId: message.author.id }, { scId: 1 });
+                if (!dbres) {
+                    message.channel.send("You are not registered.")
                 }
                 else {
-                    console.log(`Map already existed in the db ${map.name}.`)
+                    const userId = dbres.scId
+    
+                    const userScoresCount = await db.collection("discordRankBotScores").find({ player: userId, ranked: true }).count();
+                    if (userScoresCount === 0) await getTopScoresFromScoreSaber(userId, db);
+                    else await getRecentScoresFromScoreSaber(userId, db);
+    
+                    const otherScoresCount = await db.collection("discordRankBotScores").find({ player: args[0], ranked: true }).count();
+                    if (otherScoresCount === 0) await getTopScoresFromScoreSaber(args[0], db)
+                    else await getRecentScoresFromScoreSaber(args[0], db)
+    
+                    let otherScores = await db.collection("discordRankBotScores").find({ player: args[0], ranked: true }).toArray();
+    
+                    let playlist = {
+                        playlistTitle: `${dbres.discName}-vs-${args[0]}`,
+                        playlistAuthor: "RankBot",
+                        playlistDescription: "",
+                        image: "",
+                        songs: []
+                    }
+    
+                    for (let i = 0; i < otherScores.length; i++) {
+                        let play = await db.collection("discordRankBotScores").findOne({ player: userId, leaderboardId: otherScores[i].leaderboardId });
+                        const songhash = { hash: otherScores[i].hash }
+                        if (play && play.score < otherScores[i].score) playlist.songs.push(songhash);
+                        else if (!play) playlist.songs.push(songhash);
+                    }
+    
+                    const playlistString = JSON.stringify(playlist);
+    
+                    fs.writeFile(`${dbres.discName}-vs-${args[0]}.json`, playlistString, (err) => {
+                        if (err) console.log(err);
+                        else console.log("Playlist created");
+                    });
+    
+                    const attachment = new Discord.MessageAttachment(`${dbres.discName}-vs-${args[0]}.json`);
+    
+                    await message.channel.send(`${message.author}, here is your playlist.\nIt has ${playlist.songs.length} songs, get sniping.`, attachment);
+    
+                    try {
+                        fs.unlinkSync(`${dbres.discName}-vs-${args[0]}.json`);
+                    } catch (err) {
+                        console.error(err);
+                    }
+                }
+            }
+        }
+
+        if (command === 'guest') {
+            function DMuser() {
+                message.author.send("You have successfully registered to the Finnish Beat Saber community discord. \nRemember to check the rules in the #info-etc channel and for further bot interaction go to #botstuff and enjoy your stay.")
+            }
+
+            if (message.member.roles.cache.some(role => role.name === 'landed')) {
+                let addRole = message.guild.roles.cache.find(role => role.name === "Guest");
+                message.member.roles.set([addRole])
+                    .then(DMuser())
+                    .catch(console.log);
+            }
+        }
+
+        if (command === 'getrecentscores') {
+            if(checkIfOwner(message))
+            {
+                await getRecentScoresFromScoreSaber(args[0], db);
+                message.channel.send("Got some recent scores.")
+            }
+            
+        }
+
+        if (command === 'gettopscores') {
+            if (checkIfOwner(message)) {
+                const query = { scId: args[0] }
+                let dbres = await db.collection("discordRankBotUsers").find(query).toArray();
+                let userName;
+
+                console.log(dbres)
+
+                if (dbres.length === 1) userName = dbres[0].discName;
+                else {
+                    const userData = await getUserFromScoreSaber(args[0]);
+                    userName = userData.playerInfo.playerName
+                }
+                console.log(userName);
+
+                message.channel.send(`Getting scores for ${userName}.`)
+
+                await getTopScoresFromScoreSaber(args[0], db);
+                message.channel.send(`Got top scores for ${userName}.`)
+            }
+
+        }
+
+        if (command === 'getranked') {
+            if (checkIfOwner(message)) {
+                console.log(`Requesting ranked maps.`)
+                let maps = await fetch(`https://scoresaber.com/api.php?function=get-leaderboards&page=1&limit=${args[0]}&ranked={ranked_only}`)
+                    .then(res => res.json())
+                    .catch(err => { console.log(`${err}`) })
+
+                console.log(`Found: ${maps.songs.length} maps.`);
+
+                let insertedMaps = 0;
+                let existedMaps = 0;
+
+                let newMaps = [];
+
+                for (let i = 0; i < maps.songs.length; i++) {
+                    let map = maps.songs[i];
+                    const query = { hash: map.id, diff: map.diff };
+                    const dbres = await db.collection("scoresaberRankedMaps").find(query).toArray();
+                    if (!dbres[0]) {
+                        let rankedStatus = false;
+                        if (map.ranked === 1) rankedStatus = true;
+                        let object = {
+                            hash: map.id,
+                            name: map.name,
+                            songAuthor: map.songAuthorName,
+                            mapper: map.levelAuthorName,
+                            bpm: map.bpm,
+                            diff: map.diff,
+                            stars: map.stars,
+                            isRanked: rankedStatus
+                        };
+                        db.collection("scoresaberRankedMaps").insertOne(object, function (err) {
+                            if (err) throw err;
+
+                            newMaps.push(map);
+                            insertedMaps++;
+                        })
+                    }
+                    else existedMaps++;
+                }
+                await message.channel.send(`New maps: ${insertedMaps}\nMaps already in db: ${existedMaps} \nFrom a total of ${maps.songs.length} maps.`)
+                console.log(`New maps: ${insertedMaps}, Maps already in db: ${existedMaps}.`)
+
+                let addedIDs = [];
+
+                if (args[1] === "nopost") return
+                else {
+                    for (let i = 0; i < newMaps.length; i++) {
+                        let map = []
+                        if (!addedIDs.includes(newMaps[i].id)) {
+                            for (let j = 0; j < newMaps.length; j++) {
+                                if (newMaps[i].id === newMaps[j].id) {
+                                    map.push(newMaps[j])
+                                    addedIDs.push(newMaps[i].id);
+                                }
+                            }
+
+                            map.sort(function (a, b) {
+                                return b.stars - a.stars;
+                            });
+
+                            let mapData = await db.collection("beatSaverLocal").find({ hash: map[0].id.toLowerCase() }).toArray();
+                            if (mapData.length === 0) mapData = await getBeatSaverMapData(map[0].id); //This does not currently work, fix
+
+                            let difficultyData = [];
+
+                            for (let i = 0; i < mapData[0].metadata.characteristics.length; i++) {
+                                const difficultyInfo = mapData[0].metadata.characteristics[i];
+                                if (difficultyInfo.name === 'Standard') difficultyData = difficultyInfo.difficulties;
+                            }
+
+                            const minutes = Math.floor(mapData[0].metadata.duration / 60);
+                            const seconds = (mapData[0].metadata.duration - minutes * 60).toString().padStart(2, "0");
+
+                            const embed = new Discord.MessageEmbed()
+                                .setAuthor(`${map[0].name} ${map[0].songSubName} - ${map[0].songAuthorName}`, `https://new.scoresaber.com/apple-touch-icon.46c6173b.png`, `https://scoresaber.com/leaderboard/${map[0].uid}`)
+                                .setThumbnail(`https://scoresaber.com${map[0].image}`)
+                                .addField(`Mapper`, `${map[0].levelAuthorName}`)
+                                .addFields(
+                                    { name: `BPM`, value: `${map[0].bpm}`, inline: true },
+                                    { name: `Length`, value: `${minutes}:${seconds}`, inline: true }
+                                )
+                                .setTimestamp()
+                                .setFooter("hahayes");
+
+                            for (let l = 0; l < map.length; l++) {
+                                const thisDiffData = difficultyData[convertDiffNameBeatSaver(map[l].diff)]
+                                const NPS = Math.round(thisDiffData.notes / thisDiffData.length * 100) / 100
+                                embed.addField(`${convertDiffNameVisual(map[l].diff)}`, `**${map[l].stars}** :star: | NJS: **${thisDiffData.njs}** | NPS: **${NPS}**`);
+                            }
+                            await message.channel.send(embed);
+                        }
+                    }
                 }
             }
         };
-        */
 
         if (command === 'updateallcountry') {
             if (checkIfOwner(message)) {
@@ -437,7 +821,7 @@ async function commandHandler(db) {
 
         if (command === 'updateallroles') {
             if (checkIfOwner(message)) {
-                await console.log(`Starting updates`);
+                console.log(`Starting updates`);
                 await message.channel.send(`Updating all registered user roles.`);
                 try {
                     await UpdateAllRoles(db);

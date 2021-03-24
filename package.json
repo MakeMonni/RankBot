@@ -4,6 +4,7 @@
   "description": "BeatSaberRankBot",
   "main": "bot.js",
   "dependencies": {
+    "atob": "^2.1.2",
     "bottleneck": "^2.19.5",
     "discord.js": "^12.5.1",
     "form-data": "^2.5.1",
