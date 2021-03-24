@@ -886,7 +886,7 @@ async function commandHandler(db) {
                     return
                 }
 
-                let myobj = { discId: message.author.id, scId: args[0], discName: message.author.username, country: user.playerInfo.country };
+                let myobj = { discId: message.author.id, scId: id, discName: message.author.username, country: user.playerInfo.country };
                 let query = { discId: message.author.id };
 
                 db.collection("discordRankBotUsers").find(query).toArray(function (err, dbres) {
