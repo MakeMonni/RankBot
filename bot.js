@@ -82,7 +82,7 @@ async function memberJoined() {
 }
 
 function newMemberTimerMessage(member) {
-    client.channels.cache.get(`824082816673120276`).send(`${member} joined 24h ago`);
+    client.channels.cache.get(adminchannelID).send(`${member} joined 24h ago`);
 }
 
 async function memberLeft(db) {
@@ -265,6 +265,7 @@ async function getBeatSaverMapDataGithub(db) {
 
     for (let i = 0; i < json.length; i++) {
         delete json[i]._id;
+        json[i].hash = json[i].hash.toUpperCase();
         await db.collection("beatSaverLocal").update({ hash: json[i].hash }, json[i], {
             upsert: true
         })
@@ -629,7 +630,7 @@ async function commandHandler(db) {
                                 return b.stars - a.stars;
                             });
 
-                            let mapData = await db.collection("beatSaverLocal").find({ hash: map[0].id.toLowerCase() }).toArray();
+                            let mapData = await db.collection("beatSaverLocal").find({ hash: map[0].id }).toArray();
                             if (mapData.length === 0) mapData = await getBeatSaverMapData(map[0].id); //This does not currently work, fix
 
                             let difficultyData = [];
