@@ -852,7 +852,7 @@ async function commandHandler(db) {
                             .setThumbnail(`https://new.scoresaber.com${user.playerInfo.avatar}`)
                             .addField('Profile', `[__${user.playerInfo.playerName}__](https://new.scoresaber.com/u/${dbres[0].scId})`)
                             .addField("Ranks", `:globe_with_meridians: #${user.playerInfo.rank} \u200b \u200b \u200b :flag_${user.playerInfo.country.toLowerCase()}: #${user.playerInfo.countryRank}`)
-                            .addField(`Stats`, `${user.playerInfo.pp}pp \u200b Acc: ${Math.round(user.scoreStats.averageRankedAccuracy * 100) / 100}%`)
+                            .addField(`Stats`, `${new Intl.NumberFormat('fi-FI').format(user.playerInfo.pp)}pp \u200b Acc: ${Math.round(user.scoreStats.averageRankedAccuracy * 100) / 100}%`)
                             .addFields(
                                 { name: `Playcount`, value: `Total: ${user.scoreStats.totalPlayCount}`, inline: true },
                                 //{ name: `\u200b`, value: `\u200b`, inline: true },
