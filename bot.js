@@ -461,15 +461,13 @@ async function commandHandler(db) {
         }
 
         if (command === 'forcesaverdata') {
-            if(checkIfOwner(message))
-            {
+            if (checkIfOwner(message)) {
                 getBeatSaverMapDataGithub(db);
             }
         }
 
         if (command === 'snipelist') {
-            if(checkIfOwner(message))
-            {
+            if (checkIfOwner(message)) {
                 message.channel.send("Gathering and comparing scores, this might take a moment.")
 
                 let dbres = await db.collection("discordRankBotUsers").findOne({ discId: message.author.id }, { scId: 1 });
@@ -478,17 +476,17 @@ async function commandHandler(db) {
                 }
                 else {
                     const userId = dbres.scId
-    
+
                     const userScoresCount = await db.collection("discordRankBotScores").find({ player: userId, ranked: true }).count();
                     if (userScoresCount === 0) await getTopScoresFromScoreSaber(userId, db);
                     else await getRecentScoresFromScoreSaber(userId, db);
-    
+
                     const otherScoresCount = await db.collection("discordRankBotScores").find({ player: args[0], ranked: true }).count();
                     if (otherScoresCount === 0) await getTopScoresFromScoreSaber(args[0], db)
                     else await getRecentScoresFromScoreSaber(args[0], db)
-    
+
                     let otherScores = await db.collection("discordRankBotScores").find({ player: args[0], ranked: true }).toArray();
-    
+
                     let playlist = {
                         playlistTitle: `${dbres.discName}-vs-${args[0]}`,
                         playlistAuthor: "RankBot",
@@ -496,25 +494,25 @@ async function commandHandler(db) {
                         image: "",
                         songs: []
                     }
-    
+
                     for (let i = 0; i < otherScores.length; i++) {
                         let play = await db.collection("discordRankBotScores").findOne({ player: userId, leaderboardId: otherScores[i].leaderboardId });
                         const songhash = { hash: otherScores[i].hash }
                         if (play && play.score < otherScores[i].score) playlist.songs.push(songhash);
                         else if (!play) playlist.songs.push(songhash);
                     }
-    
+
                     const playlistString = JSON.stringify(playlist);
-    
+
                     fs.writeFile(`${dbres.discName}-vs-${args[0]}.json`, playlistString, (err) => {
                         if (err) console.log(err);
                         else console.log("Playlist created");
                     });
-    
+
                     const attachment = new Discord.MessageAttachment(`${dbres.discName}-vs-${args[0]}.json`);
-    
+
                     await message.channel.send(`${message.author}, here is your playlist.\nIt has ${playlist.songs.length} songs, get sniping.`, attachment);
-    
+
                     try {
                         fs.unlinkSync(`${dbres.discName}-vs-${args[0]}.json`);
                     } catch (err) {
@@ -538,12 +536,11 @@ async function commandHandler(db) {
         }
 
         if (command === 'getrecentscores') {
-            if(checkIfOwner(message))
-            {
+            if (checkIfOwner(message)) {
                 await getRecentScoresFromScoreSaber(args[0], db);
                 message.channel.send("Got some recent scores.")
             }
-            
+
         }
 
         if (command === 'gettopscores') {
@@ -602,6 +599,7 @@ async function commandHandler(db) {
                         };
                         db.collection("scoresaberRankedMaps").insertOne(object, function (err) {
                             if (err) throw err;
+                            //await db.collection("discordRankBotScores").updateMany({ hash: object.hash }, { $set: { ranked: true } }); // Untested
 
                             newMaps.push(map);
                             insertedMaps++;
@@ -744,7 +742,7 @@ async function commandHandler(db) {
                         users.push(scuser);
                     }
 
-                    if (usersFlipped) users = await users.reverse();
+                    if (usersFlipped) users = users.reverse();
 
                     if (foundComparableUser === false && !user.bot) {
                         message.channel.send("The pinged user does not seem to be registered.")
@@ -826,7 +824,7 @@ async function commandHandler(db) {
                 await message.channel.send(`Updating all registered user roles.`);
                 try {
                     await UpdateAllRoles(db);
-                    await console.log(`Completed role updates.`);
+                    console.log(`Completed role updates.`);
                     await message.channel.send(`Finished.`);
                 }
                 catch (err) {
@@ -848,9 +846,24 @@ async function commandHandler(db) {
 
                     if (user) {
                         console.log(`${user.playerInfo.playerName} r:${user.playerInfo.countryRank}`);
-                        message.channel.send(`${user.playerInfo.playerName} is rank ${user.playerInfo.countryRank} in ${user.playerInfo.country} with ${user.playerInfo.pp}pp`);
+
+                        const embed = new Discord.MessageEmbed()
+                            .setColor('#513dff')
+                            .setThumbnail(`https://new.scoresaber.com${user.playerInfo.avatar}`)
+                            .addField('Profile', `[__${user.playerInfo.playerName}__](https://new.scoresaber.com/u/${dbres[0].scId})`)
+                            .addField("Ranks", `:globe_with_meridians: #${user.playerInfo.rank} \u200b \u200b \u200b :flag_${user.playerInfo.country.toLowerCase()}: #${user.playerInfo.countryRank}`)
+                            .addField(`Stats`, `${user.playerInfo.pp}pp \u200b Acc: ${Math.round(user.scoreStats.averageRankedAccuracy * 100) / 100}%`)
+                            .addFields(
+                                { name: `Playcount`, value: `Total: ${user.scoreStats.totalPlayCount}`, inline: true },
+                                //{ name: `\u200b`, value: `\u200b`, inline: true },
+                                { name: `\u200b`, value: `Ranked: ${user.scoreStats.rankedPlayCount}`, inline: true }
+                            )
+                            .setTimestamp()
+                            .setFooter(`Remember to hydrate`);
+
+                        message.channel.send(embed)
                     }
-                    else message.channel.send(`Seems like we ran into an error, you should try again later`)
+                    else message.channel.send(`Seems like we ran into an error, you should try again later`);
                 }
             })
         }
@@ -878,7 +891,7 @@ async function commandHandler(db) {
                 return message.channel.send(`Please use a scoresaber id... ${message.author}!`);
             }
             else if (args) {
-                let id = args[0].replace(/\D/g,'');
+                let id = args[0].replace(/\D/g, '');
                 console.log(id)
                 let user = await getUserFromScoreSaber(id);
 
@@ -893,29 +906,30 @@ async function commandHandler(db) {
                 db.collection("discordRankBotUsers").find(query).toArray(function (err, dbres) {
                     if (err) throw err;
                     if (dbres?.length < 1) {
-                        db.collection("discordRankBotUsers").insertOne(myobj, function (err) {
+                        db.collection("discordRankBotUsers").insertOne(myobj, async function (err) {
                             if (err) throw err;
                             console.log(`inserted ${message.author.username} with sc ${user.playerInfo.playerName}`);
 
-                            function DMuser() {
-                                message.author.send("You have successfully registered to the Finnish Beat Saber community discord. \nRemember to check the rules in the #info-etc channel and for further bot interaction go to #botstuff and enjoy your stay.")
+                            async function UserRegistered() {
+                                await message.author.send("You have successfully registered to the Finnish Beat Saber community discord. \nRemember to check the rules in the #info-etc channel and for further bot interaction go to #botstuff and enjoy your stay.")
+                                await client.channels.cache.get(adminchannelID).send(`${message.author.username} registered. Country: ${user.playerInfo.country} \n<https://scoresaber.com/u/${id}>`)
                             }
 
                             if (user.playerInfo.country === config.country) {
                                 if (message.member.roles.cache.some(role => role.name === 'landed')) {
                                     let addRole = message.guild.roles.cache.find(role => role.name === "Verified");
-                                    message.member.roles.set([addRole])
-                                        .then(DMuser())
+                                    await message.member.roles.set([addRole])
                                         .catch(console.log);
+                                    UserRegistered();
                                 }
                                 else message.channel.send(`You have been added and your role will be set with the next update, or if you are impatient you can run ${prefix}roleme.`);
                             }
                             else {
                                 if (message.member.roles.cache.some(role => role.name === 'landed')) {
                                     let addRole = message.guild.roles.cache.find(role => role.name === "Guest");
-                                    message.member.roles.set([addRole])
-                                        .then(DMuser())
+                                    await message.member.roles.set([addRole])
                                         .catch(console.log);
+                                    UserRegistered();
                                 }
                                 else message.channel.send("You have been added but unfortunately you will not get a role based on your rank as its not supported for international players.");
                             }
