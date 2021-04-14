@@ -3,5 +3,6 @@
     "token" : "",
     "updateIntervalHours": ,
     "guildId" : "",
-    "country": ""
+    "country": "",
+    "adminchannelID" : ""
 }

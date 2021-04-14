@@ -2,7 +2,8 @@ const config = require('./config.json')
 
 const Discord = require('discord.js');
 const client = new Discord.Client();
-const prefix = config.prefix
+const prefix = config.prefix;
+const adminchannelID = config.adminchannelID;
 
 const Bottleneck = require(`bottleneck`);
 const fetch = require('node-fetch');
@@ -10,14 +11,12 @@ const fetch = require('node-fetch');
 const MongoClient = require('mongodb').MongoClient;
 const assert = require('assert');
 
-const fs = require('fs');
-
 const atob = require('atob');
 
 const url = 'mongodb://localhost:27017';
 const dbName = 'discordRankBot';
 
-const adminchannelID = `767029317741051944`
+const schedule = require('node-schedule')
 
 const options = {
     headers: { 'User-Agent': "FinnishBSDiscordBot/1.0.0" }
@@ -68,6 +67,10 @@ MongoClient.connect(url, async (err, client) => {
     await memberJoined();
 
     await commandHandler(db);
+
+    const job = schedule.scheduleJob('0 14 * * *', function () {
+        getBeatSaverMapDataGithub(db);
+    });
 });
 
 async function memberJoined() {
@@ -253,7 +256,7 @@ async function getBeatSaverMapDataGithub(db) {
 
     const sha = githubData[0].sha;
 
-    let data = await fetch(`https://api.github.com/repos/andruzzzhka/BeatSaberScrappedData/git/blobs/${sha}`, {
+    const data = await fetch(`https://api.github.com/repos/andruzzzhka/BeatSaberScrappedData/git/blobs/${sha}`, {
         headers: {
             Accept: "application/vnd.github.v3+json"
         }
@@ -266,9 +269,12 @@ async function getBeatSaverMapDataGithub(db) {
     for (let i = 0; i < json.length; i++) {
         delete json[i]._id;
         json[i].hash = json[i].hash.toUpperCase();
-        await db.collection("beatSaverLocal").update({ hash: json[i].hash }, json[i], {
-            upsert: true
-        })
+
+        await db.collection("beatSaverLocal").updateOne(
+            { hash: json[i].hash },
+            { $set: json[i] },
+            { upsert: true }
+        )
     }
 
     db.collection("beatSaverLocal").createIndex({ hash: 1, key: 1 }, function (err, result) {
@@ -316,7 +322,7 @@ async function UpdateAllRoles(db) {
 
     let responses = [];
     for (let i = 0; i < dbres.length; i++) {
-        let user = await getUserFromScoreSaber(dbres[i].scId);
+        const user = await getUserFromScoreSaber(dbres[i].scId);
 
         responses.push(user);
     }
@@ -384,6 +390,21 @@ async function UpdateAllRoles(db) {
             continue;
         }
     };
+}
+
+async function createPlaylist(playlistName, songs) {
+    const playlist = {
+        playlistTitle: playlistName,
+        playlistAuthor: "RankBot",
+        playlistDescription: "",
+        image: "",
+        songs: songs
+    }
+
+    const playlistString = JSON.stringify(playlist);
+    const playlistBuffer = Buffer.from(playlistString, "utf-8");
+
+    return new Discord.MessageAttachment(playlistBuffer, `${playlistName}.json`);
 }
 
 //https://discordjs.guide/miscellaneous/parsing-mention-arguments.html#using-regular-expressions
@@ -456,13 +477,33 @@ async function commandHandler(db) {
         const args = message.content.slice(prefix.length).trim().split(' ');
         const command = args.shift().toLowerCase();
 
+        if (command === 'randomplaylist') {
+            if (Number.isInteger(args[0]) || args[0] > 0) {
+                let amount = parseInt(args[0]);
+
+                let results = await db.collection("beatSaverLocal").aggregate([{ $sample: { size: amount } }]).toArray();
+
+                let mapHashes = [];
+                for (let i = 0; i < results.length; i++) {
+                    const songhash = { hash: results[i].hash }
+                    mapHashes.push(songhash)
+                }
+                const playlistAttachment = await createPlaylist("RandomPlaylist", mapHashes)
+                await message.channel.send(`${message.author}, here is your random playlist. :)`, playlistAttachment);
+            }
+            else {
+                message.channel.send("That is not a valid amount maps for a playlist.");
+            }
+        }
+
         if (command === 'test') {
             message.channel.send("Haha yes nice test :)");
         }
 
         if (command === 'forcesaverdata') {
             if (checkIfOwner(message)) {
-                getBeatSaverMapDataGithub(db);
+                await getBeatSaverMapDataGithub(db);
+                message.channel.send("Done")
             }
         }
 
@@ -470,7 +511,7 @@ async function commandHandler(db) {
             if (checkIfOwner(message)) {
                 message.channel.send("Gathering and comparing scores, this might take a moment.")
 
-                let dbres = await db.collection("discordRankBotUsers").findOne({ discId: message.author.id }, { scId: 1 });
+                const dbres = await db.collection("discordRankBotUsers").findOne({ discId: message.author.id }, { scId: 1 });
                 if (!dbres) {
                     message.channel.send("You are not registered.")
                 }
@@ -487,37 +528,16 @@ async function commandHandler(db) {
 
                     let otherScores = await db.collection("discordRankBotScores").find({ player: args[0], ranked: true }).toArray();
 
-                    let playlist = {
-                        playlistTitle: `${dbres.discName}-vs-${args[0]}`,
-                        playlistAuthor: "RankBot",
-                        playlistDescription: "",
-                        image: "",
-                        songs: []
-                    }
-
+                    let mapHashes = [];
                     for (let i = 0; i < otherScores.length; i++) {
                         let play = await db.collection("discordRankBotScores").findOne({ player: userId, leaderboardId: otherScores[i].leaderboardId });
                         const songhash = { hash: otherScores[i].hash }
-                        if (play && play.score < otherScores[i].score) playlist.songs.push(songhash);
-                        else if (!play) playlist.songs.push(songhash);
+                        if (play && play.score < otherScores[i].score) mapHashes.push(songhash);
+                        else if (!play) mapHashes.push(songhash);
                     }
 
-                    const playlistString = JSON.stringify(playlist);
-
-                    fs.writeFile(`${dbres.discName}-vs-${args[0]}.json`, playlistString, (err) => {
-                        if (err) console.log(err);
-                        else console.log("Playlist created");
-                    });
-
-                    const attachment = new Discord.MessageAttachment(`${dbres.discName}-vs-${args[0]}.json`);
-
-                    await message.channel.send(`${message.author}, here is your playlist.\nIt has ${playlist.songs.length} songs, get sniping.`, attachment);
-
-                    try {
-                        fs.unlinkSync(`${dbres.discName}-vs-${args[0]}.json`);
-                    } catch (err) {
-                        console.error(err);
-                    }
+                    const playlistAttachment = await createPlaylist(`${dbres.discName}-vs-${args[0]}`, mapHashes)
+                    await message.channel.send(`${message.author}, here is your playlist.\nIt has ${playlist.songs.length} songs, get sniping.`, playlistAttachment);
                 }
             }
         }
@@ -597,9 +617,9 @@ async function commandHandler(db) {
                             stars: map.stars,
                             isRanked: rankedStatus
                         };
-                        db.collection("scoresaberRankedMaps").insertOne(object, function (err) {
+                        db.collection("scoresaberRankedMaps").insertOne(object, async function (err) {
                             if (err) throw err;
-                            //await db.collection("discordRankBotScores").updateMany({ hash: object.hash }, { $set: { ranked: true } }); // Untested
+                            await db.collection("discordRankBotScores").updateMany({ hash: object.hash }, { $set: { ranked: true } }); // Untested
 
                             newMaps.push(map);
                             insertedMaps++;
