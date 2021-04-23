@@ -16,7 +16,8 @@ const atob = require('atob');
 const url = 'mongodb://localhost:27017';
 const dbName = 'discordRankBot';
 
-const schedule = require('node-schedule')
+const schedule = require('node-schedule');
+const { addListener } = require('process');
 
 const options = {
     headers: { 'User-Agent': "FinnishBSDiscordBot/1.0.0" }
@@ -211,7 +212,6 @@ async function getTopScoresFromScoreSaber(scoreSaberID, db) {
         pageOfScoreSaber++;
     }
     console.log(`Reached end of ranked for ${scoreSaberID}`);
-    console.log(`Inserted: ${insertedSongs} new plays and ${updatedSongs} updated songs.`)
 }
 
 async function AddPlayToDb(playData, db, scoreSaberID) {
@@ -230,7 +230,8 @@ async function AddPlayToDb(playData, db, scoreSaberID) {
             player: scoreSaberID,
             diff: playData.difficultyRaw,
             date: playData.timeSet,
-            ranked: isRanked
+            ranked: isRanked,
+            gained: false
         }
         if (dbres[0] && dbres[0].score < playData.score) {
             db.collection("discordRankBotUsers").replaceOne(dbres[0], play, function (err) {
@@ -392,6 +393,11 @@ async function UpdateAllRoles(db) {
     };
 }
 
+async function findMapByHash(hash, db) {
+    const map = await db.collection("beatSaverLocal").findOne({ hash: hash });
+    return map;
+}
+
 async function createPlaylist(playlistName, songs) {
     const playlist = {
         playlistTitle: playlistName,
@@ -401,7 +407,7 @@ async function createPlaylist(playlistName, songs) {
         songs: songs
     }
 
-    const playlistString = JSON.stringify(playlist);
+    const playlistString = JSON.stringify(playlist, null, 2);
     const playlistBuffer = Buffer.from(playlistString, "utf-8");
 
     return new Discord.MessageAttachment(playlistBuffer, `${playlistName}.json`);
@@ -477,11 +483,95 @@ async function commandHandler(db) {
         const args = message.content.slice(prefix.length).trim().split(' ');
         const command = args.shift().toLowerCase();
 
+        if (command === 'test') {
+            message.channel.send("Haha yes nice test :)");
+        }
+
+        if (command === 'gains') {
+            message.channel.send("soonTM")
+            /*
+            let user = await db.collection("discordRankBotUsers").find({ discId: message.author.id }).toArray();
+            if (user.length > 0) {
+                let scoresFromUser = await db.collection("discordRankBotScores").find({ player: user[0].scId }).count();
+                if (scoresFromUser > 0) {
+                    await getRecentScoresFromScoreSaber(user[0].scId, db);
+
+                    const newScores = await db.collection("discordRankBotScores").find({ player: user[0].scId, gained: false }).toArray();
+
+                    const scProfile = await getUserFromScoreSaber(user[0].scId);
+                    await db.collection("discordRankBotUsers").updateOne({ discId: message.author.id }, { $set: { pp: scProfile.playerInfo.pp, gainsDate: Date.now() } });
+
+                    const ppGained = scProfile.playerInfo.pp - user[0].pp;
+
+                    message.channel.send(`You played ${newScores.length} maps, gained ${ppGained}`);
+                }
+                else {
+                    message.channel.send("Setting up your gains for the first time, this will take a while.");
+                    await getTopScoresFromScoreSaber(user[0].scId, db);
+
+                    const scProfile = await getUserFromScoreSaber(user[0].scId);
+                    await db.collection("discordRankBotUsers").updateOne({ discId: message.author.id }, { $set: { pp: scProfile.playerInfo.pp, gainsDate: Date.now() } });
+
+                    message.channel.send("You are now setup to use gains command in the future");
+                }
+                db.collection("discordRankBotScores").updateMany({ player: user[0].scId, gained: false }, { $set: { gained: true } })
+            }
+*/
+        }
+
+        if (command === 'playlistinfo') {
+            if (checkIfOwner(message)) {
+                const attachmentURL = message.attachments.array()[0].attachment;
+
+                let data = await fetch(`${attachmentURL}`).then(res => res.json());
+
+                console.log(data);
+
+                let mapInfo;
+                for (let i = 0; i < data.songs.length; i++) {
+                    let mapHash = data.songs[i].hash;
+
+                    const result = await db.collection("beatSaverLocal").findOne({ hash: mapHash });
+
+                    if (!result) {
+                        mapInfo = mapInfo + (`Could not find map ${data.songs[i].hash}`)
+                    }
+                    else mapInfo = mapInfo + (`${result.metadata.songName} ${result.metadata.songSubName} - ${result.metadata.songAuthorName} by ${result.metadata.levelAuthorName} | Key: ${result.key} | BPM: ${result.metadata.bpm}\n`);
+                }
+                const mapInfoBuffer = Buffer.from(mapInfo, "utf-8");
+                const mapInfoAttachment = new Discord.MessageAttachment(mapInfoBuffer, `mapInfo.txt`);
+
+                message.channel.send("Here is your info :)", mapInfoAttachment);
+            }
+        }
+
+        if (command === 'rankedlist') {
+            message.channel.send("soonTM")
+            /*
+            const maps = await db.collection("scoresaberRankedMaps").find({}).toArray();
+
+            let hashlist = [];
+            for (let i = 0; i < maps.length; i++) {
+                const mapHash = { hash: maps[i].hash }
+                if (!hashlist.some(e => e.hash === maps[i].hash)) hashlist.push(mapHash);
+
+            }
+
+            let playlistAttatchment = await createPlaylist("Ranked", hashlist);
+            message.channel.send("Here is your playlist with all ranked maps.", playlistAttatchment);
+            */
+        }
+
+        if (command === 'randombsr') {
+            const result = await db.collection("beatSaverLocal").aggregate([{ $sample: { size: 1 } }]).toArray();
+            message.channel.send(`!bsr ${result[0].key}`)
+        }
+
         if (command === 'randomplaylist') {
             if (Number.isInteger(args[0]) || args[0] > 0) {
                 let amount = parseInt(args[0]);
 
-                let results = await db.collection("beatSaverLocal").aggregate([{ $sample: { size: amount } }]).toArray();
+                const results = await db.collection("beatSaverLocal").aggregate([{ $sample: { size: amount } }]).toArray();
 
                 let mapHashes = [];
                 for (let i = 0; i < results.length; i++) {
@@ -494,10 +584,6 @@ async function commandHandler(db) {
             else {
                 message.channel.send("That is not a valid amount maps for a playlist.");
             }
-        }
-
-        if (command === 'test') {
-            message.channel.send("Haha yes nice test :)");
         }
 
         if (command === 'forcesaverdata') {
@@ -608,7 +694,7 @@ async function commandHandler(db) {
                         let rankedStatus = false;
                         if (map.ranked === 1) rankedStatus = true;
                         let object = {
-                            hash: map.id,
+                            hash: map.id.toUpperCase(),
                             name: map.name,
                             songAuthor: map.songAuthorName,
                             mapper: map.levelAuthorName,
@@ -619,7 +705,7 @@ async function commandHandler(db) {
                         };
                         db.collection("scoresaberRankedMaps").insertOne(object, async function (err) {
                             if (err) throw err;
-                            await db.collection("discordRankBotScores").updateMany({ hash: object.hash }, { $set: { ranked: true } }); // Untested
+                            await db.collection("discordRankBotScores").updateMany({ hash: object.hash }, { $set: { ranked: true } });
 
                             newMaps.push(map);
                             insertedMaps++;
@@ -649,7 +735,7 @@ async function commandHandler(db) {
                             });
 
                             let mapData = await db.collection("beatSaverLocal").find({ hash: map[0].id }).toArray();
-                            if (mapData.length === 0) mapData = await getBeatSaverMapData(map[0].id); //This does not currently work, fix
+                            //if (mapData.length === 0) mapData = await getBeatSaverMapData(map[0].id); //This does not currently work, fix
 
                             let difficultyData = [];
 
@@ -677,6 +763,8 @@ async function commandHandler(db) {
                                 const NPS = Math.round(thisDiffData.notes / thisDiffData.length * 100) / 100
                                 embed.addField(`${convertDiffNameVisual(map[l].diff)}`, `**${map[l].stars}** :star: | NJS: **${thisDiffData.njs}** | NPS: **${NPS}**`);
                             }
+                            const key = mapData[0].key;
+                            embed.addField(`\u200b`, `[Download](https://beatsaver.com${mapData[0].downloadURL}) | [BeatSaver](https://beatsaver.com/beatmap/${key}) | [Preview](https://skystudioapps.com/bs-viewer/?id=${key})`);
                             await message.channel.send(embed);
                         }
                     }
@@ -875,7 +963,6 @@ async function commandHandler(db) {
                             .addField(`Stats`, `${new Intl.NumberFormat('fi-FI').format(user.playerInfo.pp)}pp \u200b Acc: ${Math.round(user.scoreStats.averageRankedAccuracy * 100) / 100}%`)
                             .addFields(
                                 { name: `Playcount`, value: `Total: ${user.scoreStats.totalPlayCount}`, inline: true },
-                                //{ name: `\u200b`, value: `\u200b`, inline: true },
                                 { name: `\u200b`, value: `Ranked: ${user.scoreStats.rankedPlayCount}`, inline: true }
                             )
                             .setTimestamp()
