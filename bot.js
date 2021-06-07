@@ -684,7 +684,7 @@ async function commandHandler(db) {
 
         if (command === 'hmd') {
             let listOfHMD = ["CV1", "Quest_1", "Quest_2", "Rift_S", "Vive", "Index", "WMR", "Cosmos", "Reverb_G2"];
-            if (args[0].toLowerCase() === `help`) {
+            if (args[0]?.toLowerCase() === `help` || !args[0]) {
                 let string = "\n";
                 for (let i = 0; i < listOfHMD.length; i++) {
                     string = string + listOfHMD[i] + "\n"
