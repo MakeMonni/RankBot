@@ -586,17 +586,17 @@ async function commandHandler(db) {
         };
 
         if (command === 'tourney') {
-            let role = message.guild.roles.cache.filter(role => role.name === "Turanausilmotukset").first();
+            let role = message.guild.roles.cache.filter(role => role.name === "Turnausilmotukset").first();
             if (role === undefined) {
                 console.log(`Role Turanausilmotukset did not exist. Creating...`);
 
                 await message.guild.roles.create({
                     data: {
-                        name: "Turanausilmotukset"
+                        name: "Turnausilmotukset"
                     }
-                }).catch(err => console.error(`Failed to create role Turanausilmotukset`, err));
+                }).catch(err => console.error(`Failed to create role Turnausilmotukset`, err));
 
-                role = message.guild.roles.cache.filter(role => role.name === "Turanausilmotukset").first();
+                role = message.guild.roles.cache.filter(role => role.name === "Turnausilmotukset").first();
             }
             await message.member.roles.add(role);
             message.channel.send("You now have tourney role, prepare to be pinged on tourney stuff.\nMessage an admin if you want this removed.");
