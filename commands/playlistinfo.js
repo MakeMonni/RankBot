@@ -4,6 +4,10 @@ const fetch = require('node-fetch');
 
 class PlaylistInfo extends Command {
     async run(client, message, args) {
+        if (!message.attachments.array()[0]) {
+            await message.channel.send("No attachment provided.")
+            return;
+        }
         const attachmentURL = message.attachments.array()[0].attachment;
         if (attachmentURL.endsWith(".json") || attachmentURL.endsWith(".bplist")) {
             let data;

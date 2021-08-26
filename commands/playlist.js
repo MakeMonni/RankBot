@@ -3,7 +3,7 @@ const Command = require("../core/command/command.js");
 class Playlist extends Command {
     async run(client, message, args) {
         if (args[0] === "help") {
-            await message.channel.send(`Playlist types: \nRandom\nBeatsage\nMapper\nRanked\n\nExample: \`${client.config.prefix}playlist ranked\``) //\nNoodle\nMappinextensions
+            await message.channel.send(`Playlist types: \nRandom <amount>\nBeatsage\nMapper <mapper name>\nRanked\n\nExample: \`${client.config.prefix}playlist ranked\``) //\nNoodle\nMappinextensions
         }
 
         else if (!args[0]) {

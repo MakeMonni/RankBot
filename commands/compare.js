@@ -6,6 +6,10 @@ class Compare extends Command {
         try {
             let usersToCheck = [];
             let users = [];
+            if (!args[0]) {
+                await message.channel.send(`No user provided to compare to. Example: \`\`\`${client.config.prefix}compare @user/scoresaberid\`\`\``);
+                return;
+            }
 
             const dbres = await client.db.collection("discordRankBotUsers").find({ discId: message.author.id }).toArray();
 

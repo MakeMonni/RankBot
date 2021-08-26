@@ -11,7 +11,6 @@ class Gains extends Command {
         const user = await client.db.collection("discordRankBotUsers").findOne({ discId: message.author.id });
         if (user !== null) {
             const scoresFromUser = await client.db.collection("discordRankBotScores").find({ player: user.scId, gained: true }).count();
-            console.log(scoresFromUser);
             if (scoresFromUser > 0) {
                 await client.scoresaber.getRecentScores(user.scId);
                 const newScores = await client.db.collection("discordRankBotScores").find({ player: user.scId, gained: false }).toArray();
@@ -126,7 +125,7 @@ class Gains extends Command {
 
             } else {
                 let msg = "Setting up your gains for the first time, this will take a while depending on your playcount.\nYou will be pinged once done."
-                if (limiter.jobs("EXECUTING").length > 0) msg += " You have been qued."
+                if (limiter.jobs("EXECUTING").length > 0) msg += " You have been queued."
                 message.channel.send(msg);
 
                 limiter.schedule({ id: `Gains ${message.author.username}` }, async () => {

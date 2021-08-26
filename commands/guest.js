@@ -7,8 +7,12 @@ class Guest extends Command {
             await message.member.roles.set([addRole])
                 .then(DMuser(message))
                 .catch(console.log);
+
+            await message.guild.channels.cache.get(client.config.adminchannelID).send(`${message.author} registered as Guest.`);
         }
-        await message.guild.channels.cache.get(client.config.adminchannelID).send(`${message.author} registered as Guest.`);
+        else {
+            await message.channels.send("You are already have access to the server...");
+        }
     }
 }
 module.exports = Guest;
