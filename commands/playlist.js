@@ -61,8 +61,6 @@ class Playlist extends Command {
             }
             const maps = await client.db.collection("beatSaverLocal").find({ "metadata.levelAuthorName": { $regex: `^${args[1]}$`, $options: "i" } }).toArray();
 
-            console.log(maps[0]);
-
             let mapHashes = await hashes(maps);
 
             const playlistAttachment = await client.misc.createPlaylist(args[1], mapHashes, maps[0].versions[0].coverURL);
