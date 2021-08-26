@@ -2,17 +2,23 @@
   "name": "beatsaberrankbot",
   "version": "1.0.0",
   "description": "BeatSaberRankBot",
-  "main": "bot.js",
+  "main": "index.js",
   "dependencies": {
+    "adm-zip": "^0.5.5",
     "atob": "^2.1.2",
     "bottleneck": "^2.19.5",
-    "discord.js": "^12.5.1",
+    "discord-buttons": "^3.2.1",
+    "discord.js": "^12.5.3",
     "form-data": "^2.5.1",
     "http-signature": "^1.3.5",
     "mongodb": "^3.6.3",
     "node-fetch": "^2.6.1",
+    "node-gzip": "^1.1.2",
     "node-schedule": "^2.0.0",
-    "qs": "^6.9.4"
+    "protobufjs": "^6.11.2",
+    "qs": "^6.9.4",
+    "websocket": "^1.0.34",
+    "yauzl": "^2.10.0"
   },
   "devDependencies": {},
   "scripts": {

@@ -3,6 +3,9 @@
     "token" : "",
     "updateIntervalHours": ,
     "guildId" : "",
-    "country": "",
-    "adminchannelID" : ""
+    "country": "FI",
+    "adminchannelID" : "",
+    "mongourl" : "",
+    "dbName" : "",
+    "hmdList" : []
 }
