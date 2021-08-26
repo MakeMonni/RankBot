@@ -11,6 +11,7 @@ class Gains extends Command {
         const user = await client.db.collection("discordRankBotUsers").findOne({ discId: message.author.id });
         if (user !== null) {
             const scoresFromUser = await client.db.collection("discordRankBotScores").find({ player: user.scId, gained: true }).count();
+            console.log(scoresFromUser);
             if (scoresFromUser > 0) {
                 await client.scoresaber.getRecentScores(user.scId);
                 const newScores = await client.db.collection("discordRankBotScores").find({ player: user.scId, gained: false }).toArray();
@@ -121,10 +122,11 @@ class Gains extends Command {
                     embed.addField(`Could not find some maps`, `Unable to find ${erroredMaps} maps. Stats not counted.`)
                 }
                 message.channel.send(embed);
+                client.db.collection("discordRankBotScores").updateMany({ player: user.scId, gained: false }, { $set: { gained: true } })
 
             } else {
                 let msg = "Setting up your gains for the first time, this will take a while depending on your playcount.\nYou will be pinged once done."
-                if (limiter.jobs("EXECUTING").length > 0) msg += "You have been qued."
+                if (limiter.jobs("EXECUTING").length > 0) msg += " You have been qued."
                 message.channel.send(msg);
 
                 limiter.schedule({ id: `Gains ${message.author.username}` }, async () => {
@@ -135,9 +137,11 @@ class Gains extends Command {
                     await updateUserInfo(scProfile, message, client);
 
                     message.channel.send(`${message.author} you are now setup to use gains command in the future.`);
+                    client.db.collection("discordRankBotScores").updateMany({ player: user.scId, gained: false }, { $set: { gained: true } })
                 })
             }
-            client.db.collection("discordRankBotScores").updateMany({ player: user.scId, gained: false }, { $set: { gained: true } })
+
+
         }
         else message.channel.send(`You might not be registered, try doing ${client.config.prefix}addme command first.`);
     }
