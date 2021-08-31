@@ -11,6 +11,9 @@ MongoClient.connect(config.mongourl, async (err, client) => {
     const commands = await CommandLoader.loadCommands();
     const botClient = new BotClient(db, config, commands);
 
+    botClient.options.retryLimit = 3;
+    botClient.options.restRequestTimeout = 30000
+
     const daily = schedule.scheduleJob('0 15 * * *', async function () {
         console.log("Daily updates");
         await botClient.scoresaber.scoreTracker();

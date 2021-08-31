@@ -120,8 +120,15 @@ class Gains extends Command {
                 if (erroredMaps > 0) {
                     embed.addField(`Could not find some maps`, `Unable to find ${erroredMaps} maps. Stats not counted.`)
                 }
-                message.channel.send(embed);
-                client.db.collection("discordRankBotScores").updateMany({ player: user.scId, gained: false }, { $set: { gained: true } })
+                try {
+                    await message.channel.send(embed);
+                    client.db.collection("discordRankBotScores").updateMany({ player: user.scId, gained: false }, { $set: { gained: true } })
+
+                }
+                catch (err) {
+                    await message.channel.send("Could not send embed, try again")
+                    console.log(err);
+                }
 
             } else {
                 let msg = "Setting up your gains for the first time, this will take a while depending on your playcount.\nYou will be pinged once done."
