@@ -11,8 +11,14 @@ MongoClient.connect(config.mongourl, async (err, client) => {
     const commands = await CommandLoader.loadCommands();
     const botClient = new BotClient(db, config, commands);
 
+    //Move later
     botClient.options.retryLimit = 3;
     botClient.options.restRequestTimeout = 30000
+
+    const statusUpdate = schedule.scheduleJob('* * * * *', async function () {
+        //Add check if status is alrdy up later
+        await botClient.user.setActivity(`Need help? Use ${botClient.config.prefix}help`);
+    })
 
     const daily = schedule.scheduleJob('0 15 * * *', async function () {
         console.log("Daily updates");
@@ -26,7 +32,7 @@ MongoClient.connect(config.mongourl, async (err, client) => {
     })
 
     await botClient.login(config.token);
-    botClient.user.setActivity(`Need help? Use ${botClient.config.prefix}help`);
+    await botClient.user.setActivity(`Need help? Use ${botClient.config.prefix}help`);
 
     await db.collection("discordRankBotScores").createIndex({ hash: 1, player: 1, leaderboardId: 1 });
     await db.collection("discordRankBotUsers").createIndex({ scId: 1, discId: 1 });
