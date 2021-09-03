@@ -78,7 +78,6 @@ class GetRanked extends Command {
                             return b.stars - a.stars;
                         });
 
-
                         let mapData = await client.beatsaver.findMapByHash(map[0].id);
 
                         const versionIndex = mapData.versions.findIndex(versions => versions.hash === map[0].id)
@@ -96,12 +95,11 @@ class GetRanked extends Command {
 
                         for (let l = 0; l < map.length; l++) {
                             const thisDiffData = mapData.versions[versionIndex].diffs.find(e => e.characteristic === 'Standard' && e.difficulty === client.beatsaver.convertDiffNameBeatSaver(map[l].diff));
-                            const NPS = Math.round(thisDiffData.notes / thisDiffData.length * 100) / 100
-                            console.log(client.beatsaver.convertDiffNameVisual(map[l].diff) + "  " + map[l].diff)
+                            const NPS = Math.round(thisDiffData.notes / thisDiffData.seconds * 100) / 100
                             embed.addField(`${client.beatsaver.convertDiffNameVisual(map[l].diff)}`, `**${map[l].stars}** :star: | NJS: **${thisDiffData.njs}** | NPS: **${NPS}**`);
                         }
                         const key = mapData.key;
-                        embed.addField(`\u200b`, `[Download](https://beatsaver.com${mapData.downloadURL}) | [BeatSaver](https://beatsaver.com/beatmap/${key}) | [Preview](https://skystudioapps.com/bs-viewer/?id=${key})`);
+                        embed.addField(`\u200b`, `[Download](${mapData.versions[0].downloadURL}) | [BeatSaver](https://beatsaver.com/maps/${key.toLowerCase()}) | [Preview](https://skystudioapps.com/bs-viewer/?id=${key})`);
                         await message.channel.send(embed);
                     }
                 }
