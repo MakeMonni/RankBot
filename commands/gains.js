@@ -12,7 +12,9 @@ class Gains extends Command {
         if (user !== null) {
             const scoresFromUser = await client.db.collection("discordRankBotScores").find({ player: user.scId, gained: true }).count();
             if (scoresFromUser > 0) {
+                const botMessage = await message.channel.send("...");
                 await client.scoresaber.getRecentScores(user.scId);
+
                 const newScores = await client.db.collection("discordRankBotScores").find({ player: user.scId, gained: false }).toArray();
 
                 let countOfBeatsavior = 0;
@@ -121,7 +123,7 @@ class Gains extends Command {
                     embed.addField(`Could not find some maps`, `Unable to find ${erroredMaps} maps. Stats not counted.`)
                 }
                 try {
-                    await message.channel.send(embed);
+                    await botMessage.edit("", embed);
                     client.db.collection("discordRankBotScores").updateMany({ player: user.scId, gained: false }, { $set: { gained: true } })
 
                 }

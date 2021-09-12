@@ -11,13 +11,13 @@ class Addme extends Command {
 
             if (!user) {
                 message.channel.send("Something went terribly wrong, check your scoresaber id and try again.")
-                return
+                return;
             }
 
             let myobj = { discId: message.author.id, scId: id, discName: message.author.username, country: user.playerInfo.country };
             let query = { discId: message.author.id };
 
-            client.db.collection("discordRankBotUsers").find(query).toArray(function (err, dbres) {
+            client.db.collection("discordRankBotUsers").find(query).toArray(async function (err, dbres) {
                 if (err) throw err;
                 if (dbres?.length < 1) {
                     client.db.collection("discordRankBotUsers").insertOne(myobj, async function (err) {
@@ -41,7 +41,7 @@ class Addme extends Command {
                         }
                     });
                 } else {
-                    message.channel.send("You propably already exist in the database...");
+                    await message.channel.send("You propably already exist in the database...");
                 }
             })
         }

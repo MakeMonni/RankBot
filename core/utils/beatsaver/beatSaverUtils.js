@@ -101,7 +101,7 @@ class BeatSaverUtils {
 
     async findMapByHash(hash) {
         let map = await this.db.collection("beatSaverLocal").findOne({ versions: { $elemMatch: { hash: hash.toUpperCase() } } });
-        if (map?.notFound === true) {
+        if (map?.notFound) {
             return null;
         }
         else if (!map && map?.notFound !== false) {
@@ -119,7 +119,7 @@ class BeatSaverUtils {
 
     async findMapByKey(key) {
         let map = await this.db.collection("beatSaverLocal").findOne({ key: key.toUpperCase() });
-        if (map?.notFound === true) {
+        if (map?.notFound) {
             return null;
         }
         else if (!map && map?.notFound !== false) {
@@ -283,6 +283,14 @@ class BeatSaverUtils {
         }
         catch (err) { console.log(err); }
         console.log("Done pulling & inserting scraped BeatSaver data from github.")
+    }
+
+    convertDiffNameScoreSaber(diffName) {
+        if (diffName.toLowerCase() === "expert+") return "_ExpertPlus_SoloStandard"
+        else if (diffName.toLowerCase() === "expert") return "_Expert_SoloStandard"
+        else if (diffName.toLowerCase() === "hard") return "_Hard_SoloStandard"
+        else if (diffName.toLowerCase() === "normal") return "_Normal_SoloStandard"
+        else return "_Easy_SoloStandard"
     }
 
     convertDiffNameVisual(diffName) {

@@ -11,20 +11,18 @@ MongoClient.connect(config.mongourl, async (err, client) => {
     const commands = await CommandLoader.loadCommands();
     const botClient = new BotClient(db, config, commands);
 
-    //Move later
-    botClient.options.retryLimit = 3;
-    botClient.options.restRequestTimeout = 30000
-
     const statusUpdate = schedule.scheduleJob('* * * * *', async function () {
         //Add check if status is alrdy up later
         await botClient.user.setActivity(`Need help? Use ${botClient.config.prefix}help`);
     })
 
-    const daily = schedule.scheduleJob('0 15 * * *', async function () {
+    //France time
+    const daily = schedule.scheduleJob('0 7 * * *', async function () {
         console.log("Daily updates");
         await botClient.scoresaber.scoreTracker();
     });
 
+    //France time
     const roleUpdates = schedule.scheduleJob('0 0,6,12,18 * * *', async function () {
         if (botClient.updates) {
             await botClient.scoresaber.updateAllRoles();

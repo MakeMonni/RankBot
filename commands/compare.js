@@ -45,7 +45,7 @@ class Compare extends Command {
 
                 if (usersFlipped) users = users.reverse();
 
-                if (foundComparableUser === false && !user.bot) {
+                if (!foundComparableUser && !user.bot) {
                     message.channel.send("The pinged user does not seem to be registered.")
                 }
                 else if (users[0] && users[1] && users[0].playerInfo.playerId === users[1].playerInfo.playerId) {

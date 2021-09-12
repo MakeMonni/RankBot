@@ -9,6 +9,9 @@ const BeatSaviorUtils = require("./utils/beatsavior/beatSaviorUtils.js");
 class BotClient extends Client {
     constructor(db, config, commands, options) {
         super(options);
+        
+        this.options.retryLimit = 3;
+        this.options.restRequestTimeout = 30000
 
         this.memberHandler = new MemberHandler(this, db, config);
         this.memberHandler.init();
@@ -24,7 +27,7 @@ class BotClient extends Client {
         this.config = config;
         this.db = db;
 
-        this.updates = false;
+        this.updates = true;
     }
 
     checkIfOwner(message) {

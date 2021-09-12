@@ -6,8 +6,9 @@ class Randombsr extends Command {
         const map = await client.db.collection("beatSaverLocal").aggregate([{ $match: { automapper: false } },{ $sample: { size: 1 } }]).toArray();
         
         const embed = new Discord.MessageEmbed()
-            .addField(`\u200b`, `${map[0].metadata.songName} ${map[0].metadata.songSubName} by ${map[0].metadata.levelAuthorName}`)
+            .addField(`\u200b`, `||${map[0].metadata.songName} ${map[0].metadata.songSubName} by ${map[0].metadata.levelAuthorName}||`)
             .addField(`\u200b`, `\`!bsr ${map[0].key}\``)
+            .addField(`\u200b`, `[Download](${map[0].versions[0].downloadURL}) | [BeatSaver](https://beatsaver.com/maps/${map[0].key.toLowerCase()}) | [Preview](https://skystudioapps.com/bs-viewer/?id=${map[0].key})`);
         
         await message.channel.send(embed);
     }
