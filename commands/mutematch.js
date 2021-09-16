@@ -13,7 +13,10 @@ class MuteMatch extends Command {
             const match = res.match;
             for (let i = 0; i < match.players.length; i++) {
                 const member = await guild.members.fetch({ user: match.players[i].id, force: true });
+                console.log(member);
                 const membvoice = member.voice;
+                console.log(membvoice);
+
                 membvoice.serverDeaf ? await membvoice.setDeaf(false, "Match").catch(err => console.error(err)) : await membvoice.setDeaf(true, "Match").catch(err => console.error(err));
                 membvoice.serverMute ? await membvoice.setMute(false, "Match").catch(err => console.error(err)) : await membvoice.setMute(true, "Match").catch(err => console.error(err));
             }
