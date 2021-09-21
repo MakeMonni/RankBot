@@ -298,10 +298,10 @@ class ScoreSaberUtils {
     }
 
     async calculateMaxScore(notes) {
-        if (notes <= 3) return notes * 115
-        if (notes <= 6) return 3 * 115 + (notes - 3) * 115 * 2
-        if (notes <= 12) return 3 * 115 + 3 * 115 * 2 + (notes - 6) * 115 * 4
-        return 3 * 115 + 3 * 115 * 2 + 6 * 115 * 4 + (notes - 12) * 115 * 8
+        if (notes == 1) return 115;
+        else if (notes <= 4) return 115 + (notes - 1) * 115 * 2;
+        else if (notes <= 13) return 115 + 4 * 115 * 2 + (notes - 4) * 115 * 4;
+        return 115 + 4 * 115 * 2 + 8 * 115 * 4 + (notes - 13) * 115 * 8
     }
 
 }
