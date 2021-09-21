@@ -56,11 +56,13 @@ class Gains extends Command {
 
                         totalNotes = totalNotes + +mapTotalNotes;
 
+                        // FIX 
+                        // Spaghetti here
+
                         if (newScores[i].maxscore === 0) {
                             let mapScores = await client.db.collection("beatSaverLocal").find({ leaderboardId: newScores[i].leaderboardId, maxscore: { $gt: 1 } }).toArray();
 
                             if (mapScores.length === 0) {
-                                console.log("Making max score")
                                 newScores[i].maxscore = await client.scoresaber.calculateMaxScore(mapTotalNotes);
                                 await client.db.collection("discordRankBotScores").updateMany({ leaderboardId: newScores[i].leaderboardId }, { $set: { maxscore: newScores[i].maxscore } });
                             }
