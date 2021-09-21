@@ -145,7 +145,7 @@ class ScoreSaberUtils {
             leaderboardId: playData.leaderboardId,
             score: playData.score,
             hash: playData.songHash,
-            maxscore: playData.maxScore,
+            maxscore: 0,
             player: scoreSaberID,
             diff: playData.difficultyRaw,
             date: new Date(playData.timeSet).getTime(),
@@ -297,7 +297,7 @@ class ScoreSaberUtils {
         }
     }
 
-    calculateMaxScore(notes) {
+    async calculateMaxScore(notes) {
         if (notes <= 3) return notes * 115
         if (notes <= 6) return 3 * 115 + (notes - 3) * 115 * 2
         if (notes <= 12) return 3 * 115 + 3 * 115 * 2 + (notes - 6) * 115 * 4

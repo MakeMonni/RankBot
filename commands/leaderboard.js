@@ -67,7 +67,7 @@ class Leaderboard extends Command {
                             if (scores[i].maxscore === 0) {
                                 const difficultyData = map.versions[versionIndex].diffs.find(e => e.characteristic === client.beatsaver.findPlayCategory(scores[0].diff) && e.difficulty === client.beatsaver.convertDiffNameBeatSaver(scores[0].diff));
 
-                                scores[i].maxscore = client.scoresaber.calculateMaxScore(difficultyData.notes)
+                                scores[i].maxscore = await client.scoresaber.calculateMaxScore(difficultyData.notes)
                             }
                             let date = new Date(scores[i].date);
                             embed.addField(`${i + 1}. ${playerName}`, ` ${new Intl.NumberFormat('fi-FI').format(scores[i].score)} - ${Math.round((scores[i].score / scores[i].maxscore) * 10000) / 100}% - ${date.getDate()}.${(date.getMonth()) + 1}.${date.getFullYear()}`);
@@ -128,7 +128,7 @@ class Leaderboard extends Command {
                             if (scores[i].maxscore === 0) {
                                 const difficultyData = map.versions[versionIndex].diffs.find(e => e.characteristic === client.beatsaver.findPlayCategory(scores[0].diff) && e.difficulty === client.beatsaver.convertDiffNameBeatSaver(scores[0].diff));
 
-                                scores[i].maxscore = client.scoresaber.calculateMaxScore(difficultyData.notes)
+                                scores[i].maxscore = await client.scoresaber.calculateMaxScore(difficultyData.notes)
                             }
                             let date = new Date(scores[i].date);
                             embed.addField(`${i + 1}. ${playerName}`, ` ${new Intl.NumberFormat('fi-FI').format(scores[i].score)} - ${Math.round((scores[i].score / scores[i].maxscore) * 10000) / 100}% - ${date.getDate()}.${(date.getMonth()) + 1}.${date.getFullYear()}`);

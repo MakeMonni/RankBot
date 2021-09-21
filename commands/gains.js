@@ -17,12 +17,14 @@ class Gains extends Command {
 
                 const newScores = await client.db.collection("discordRankBotScores").find({ player: user.scId, gained: false }).toArray();
 
+                // FIX
+                // Change the way avg acc is calculated from totalscore / maxscore -> map total[i] / maxscore[i] + map total [i+1] / maxscore[i+1] ... / i.length
+
                 let countOfBeatsavior = 0;
                 let erroredMaps = 0;
                 let totalLength = 0;
                 let totalNotes = 0;
-                let totalScore = 0;
-                let totalMaxScore = 0;
+                let totalAcc = 0;
                 let totalLeftAcc = 0;
                 let totalRightAcc = 0;
                 let tdLeft = 0;
@@ -58,18 +60,17 @@ class Gains extends Command {
                             let mapScores = await client.db.collection("beatSaverLocal").find({ leaderboardId: newScores[i].leaderboardId, maxscore: { $gt: 1 } }).toArray();
 
                             if (mapScores.length === 0) {
-                                let mapTotalScore = client.scoresaber.calculateMaxScore(mapTotalNotes);
-                                totalMaxScore = totalMaxScore + +mapTotalScore;
-                                client.db.collection("discordRankBotScores").updateMany({ leaderboardId: newScores[i].leaderboardId }, { $set: { maxscore: totalScore } });
+                                newScores[i].maxscore = await client.scoresaber.calculateMaxScore(mapTotalNotes);
+                                await client.db.collection("discordRankBotScores").updateMany({ leaderboardId: newScores[i].leaderboardId }, { $set: { maxscore: newScores[i].maxscore } });
                             }
                             else {
-                                totalMaxScore = totalMaxScore + +mapScores[0].maxscore
+                                newScores[i].maxscore = mapScores[0].maxscore;
+                                await client.db.collection("discordRankBotScores").updateMany({ leaderboardId: newScores[i].leaderboardId }, { $set: { maxscore: newScores[i].maxscore } });
                             }
                         }
-                        else totalMaxScore = totalMaxScore + +newScores[i].maxscore;
 
+                        totalAcc += newScores[i].score / newScores[i].maxscore;
                         totalLength = totalLength + +map.metadata.duration;
-                        totalScore = totalScore + +newScores[i].score;
 
                         if (newScores[i].beatsavior) {
                             countOfBeatsavior++;
@@ -90,16 +91,14 @@ class Gains extends Command {
                 const ppGained = Math.round((scProfile.playerInfo.pp - user.pp) * 100) / 100;
                 const rankChange = user.rank - scProfile.playerInfo.rank;
                 const countryRankChange = user.countryRank - scProfile.playerInfo.countryRank;
-
                 const lengthString = new Date(totalLength * 1000).toISOString().substr(11, 8);
                 const averageNPS = Math.round(totalNotes / totalLength * 100) / 100;
-                const averageAccuracy = Math.round(totalScore / totalMaxScore * 10000) / 100 + "%";
+                const averageAccuracyMaps = Math.round(totalAcc / (newScores.length - erroredMaps) * 10000) / 100 + "%";
                 const averageAccuracyLeft = Math.round(totalLeftAcc / countOfBeatsavior * 100) / 100;
                 const averageAccuracyRight = Math.round(totalRightAcc / countOfBeatsavior * 100) / 100;
                 const averageTdLeft = Math.round(tdLeft * 100 / countOfBeatsavior * 100) / 100;
                 const averageTdRight = Math.round(tdRight * 100 / countOfBeatsavior * 100) / 100;
                 const fcAcc = Math.round(((averageAccuracyLeft + averageAccuracyRight) / 2) / 115 * 10000) / 100;
-
                 const time = calculateTime(user.gainsDate);
 
                 const embed = new Discord.MessageEmbed()
@@ -112,7 +111,7 @@ class Gains extends Command {
 
                 if (newScores.length > 0) {
                     embed.addField(`Playinfo`, `You played ${newScores.length} maps. \nDuration: ${lengthString}.`);
-                    embed.addField(`Averages`, `NPS: ${averageNPS} | Acc: ${averageAccuracy}`);
+                    embed.addField(`Averages`, `NPS: ${averageNPS} | Acc: ${averageAccuracyMaps}`);
                     if (averageAccuracyLeft > 0) {
                         embed.addField(`Beatsavior (${countOfBeatsavior})`, `TD: ${averageTdLeft} | ${averageTdRight}\nAcc: ${averageAccuracyLeft} | ${averageAccuracyRight}\nFC acc: ${fcAcc}%`)
                     }
@@ -124,7 +123,7 @@ class Gains extends Command {
                 }
                 try {
                     await botMessage.edit("", embed);
-                    client.db.collection("discordRankBotScores").updateMany({ player: user.scId, gained: false }, { $set: { gained: true } })
+                    //client.db.collection("discordRankBotScores").updateMany({ player: user.scId, gained: false }, { $set: { gained: true } })
 
                 }
                 catch (err) {
