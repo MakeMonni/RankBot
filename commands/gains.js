@@ -74,6 +74,10 @@ class Gains extends Command {
                             }
                         }
 
+                        if (newScores[i].maxscore < newScores[i].score) {
+                            console.log("Warning maxscore smaller than score map: " + newScores[i].leaderboardId)
+                        }
+
                         totalAcc += newScores[i].score / newScores[i].maxscore;
                         if (newScores[i].maxscore === 0) console.log("Warning maxscore 0 | LeaderboardId: " + newScores[i].leaderboardId);
                         totalLength = totalLength + +map.metadata.duration;
