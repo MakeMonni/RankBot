@@ -60,16 +60,22 @@ class Gains extends Command {
                             let mapScores = await client.db.collection("beatSaverLocal").find({ leaderboardId: newScores[i].leaderboardId, maxscore: { $gt: 1 } }).toArray();
 
                             if (mapScores.length === 0) {
+                                console.log("Making max score")
                                 newScores[i].maxscore = await client.scoresaber.calculateMaxScore(mapTotalNotes);
                                 await client.db.collection("discordRankBotScores").updateMany({ leaderboardId: newScores[i].leaderboardId }, { $set: { maxscore: newScores[i].maxscore } });
                             }
-                            else {
+                            else if (mapScores[0].maxscore != 0) {
                                 newScores[i].maxscore = mapScores[0].maxscore;
+                                await client.db.collection("discordRankBotScores").updateMany({ leaderboardId: newScores[i].leaderboardId }, { $set: { maxscore: newScores[i].maxscore } });
+                            }
+                            else {
+                                newScores[i].maxscore = await client.scoresaber.calculateMaxScore(mapTotalNotes);
                                 await client.db.collection("discordRankBotScores").updateMany({ leaderboardId: newScores[i].leaderboardId }, { $set: { maxscore: newScores[i].maxscore } });
                             }
                         }
 
                         totalAcc += newScores[i].score / newScores[i].maxscore;
+                        if (newScores[i].maxscore === 0) console.log("Warning maxscore 0 | LeaderboardId: " + newScores[i].leaderboardId);
                         totalLength = totalLength + +map.metadata.duration;
 
                         if (newScores[i].beatsavior) {
@@ -123,7 +129,7 @@ class Gains extends Command {
                 }
                 try {
                     await botMessage.edit("", embed);
-                    //client.db.collection("discordRankBotScores").updateMany({ player: user.scId, gained: false }, { $set: { gained: true } })
+                    client.db.collection("discordRankBotScores").updateMany({ player: user.scId, gained: false }, { $set: { gained: true } })
 
                 }
                 catch (err) {
