@@ -47,10 +47,15 @@ class Gains extends Command {
                     if (!mapErrored) {
                         const versionIndex = map.versions.findIndex(versions => versions.hash === newScores[i].hash)
                         if (versionIndex == -1) {
-                            erroredMaps++
+                            erroredMaps++;
                             continue;
                         }
                         const difficultyData = map.versions[versionIndex].diffs.find(e => e.characteristic === client.beatsaver.findPlayCategory(newScores[i].diff) && e.difficulty === client.beatsaver.convertDiffNameBeatSaver(newScores[i].diff));
+                        
+                        if (!difficultyData) {
+                            erroredMaps++;
+                            continue;
+                        }
 
                         let mapTotalNotes = difficultyData.notes;
 
