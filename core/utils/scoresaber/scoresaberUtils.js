@@ -144,7 +144,7 @@ class ScoreSaberUtils {
         let play = {
             leaderboardId: playData.leaderboardId,
             score: playData.score,
-            hash: playData.songHash,
+            hash: playData.songHash.toUpperCase(),
             maxscore: 0,
             player: scoreSaberID,
             diff: playData.difficultyRaw,

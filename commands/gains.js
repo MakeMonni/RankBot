@@ -47,12 +47,14 @@ class Gains extends Command {
                     if (!mapErrored) {
                         const versionIndex = map.versions.findIndex(versions => versions.hash === newScores[i].hash)
                         if (versionIndex == -1) {
+                            console.log(newScores[i].hash)
                             erroredMaps++;
                             continue;
                         }
                         const difficultyData = map.versions[versionIndex].diffs.find(e => e.characteristic === client.beatsaver.findPlayCategory(newScores[i].diff) && e.difficulty === client.beatsaver.convertDiffNameBeatSaver(newScores[i].diff));
                         
                         if (!difficultyData) {
+                            console.log(newScores[i].hash)
                             erroredMaps++;
                             continue;
                         }
@@ -120,6 +122,7 @@ class Gains extends Command {
 
                 const embed = new Discord.MessageEmbed()
                     .setTitle(`Your gains`)
+                    .setURL(`https://scoresaber.com/u/${user.scId}&sort=2`)
                     .setThumbnail(`${userAvatar(message.author.avatarURL())}`)
                     .addField(`Rank`, `${rankChange} ${Emote(user.rank, scProfile.playerInfo.rank, message)} ${scProfile.playerInfo.rank}`)
                     .addField(`PP`, `${ppGained} ${Emote(scProfile.playerInfo.pp, user.pp, message)} ${scProfile.playerInfo.pp}`)
