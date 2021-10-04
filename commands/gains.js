@@ -10,15 +10,12 @@ class Gains extends Command {
     async run(client, message, args) {
         const user = await client.db.collection("discordRankBotUsers").findOne({ discId: message.author.id });
         if (user !== null) {
-            const scoresFromUser = await client.db.collection("discordRankBotScores").find({ player: user.scId, gained: true }).count();
-            if (scoresFromUser > 0) {
+            const gainedScoresFromUser = await client.db.collection("discordRankBotScores").find({ player: user.scId, gained: true }).count();
+            if (gainedScoresFromUser > 0) {
                 const botMessage = await message.channel.send("...");
                 await client.scoresaber.getRecentScores(user.scId);
 
                 const newScores = await client.db.collection("discordRankBotScores").find({ player: user.scId, gained: false }).toArray();
-
-                // FIX
-                // Change the way avg acc is calculated from totalscore / maxscore -> map total[i] / maxscore[i] + map total [i+1] / maxscore[i+1] ... / i.length
 
                 let countOfBeatsavior = 0;
                 let erroredMaps = 0;
@@ -52,7 +49,7 @@ class Gains extends Command {
                             continue;
                         }
                         const difficultyData = map.versions[versionIndex].diffs.find(e => e.characteristic === client.beatsaver.findPlayCategory(newScores[i].diff) && e.difficulty === client.beatsaver.convertDiffNameBeatSaver(newScores[i].diff));
-                        
+
                         if (!difficultyData) {
                             console.log(newScores[i].hash)
                             erroredMaps++;
@@ -157,7 +154,15 @@ class Gains extends Command {
                 message.channel.send(msg);
 
                 limiter.schedule({ id: `Gains ${message.author.username}` }, async () => {
-                    await client.scoresaber.getAllScores(user.scId);
+
+                    const scoresFromUser = await client.db.collection("discordRankBotScores").find({ player: user.scId }).count();
+
+                    if (scoresFromUser > 0) {
+                        await client.scoresaber.getRecentScores(user.scId);
+                    }
+                    else {
+                        await client.scoresaber.getAllScores(user.scId);
+                    }
 
                     const scProfile = await client.scoresaber.getUser(user.scId);
 
@@ -165,10 +170,8 @@ class Gains extends Command {
 
                     message.channel.send(`${message.author} you are now setup to use gains command in the future.`);
                     client.db.collection("discordRankBotScores").updateMany({ player: user.scId, gained: false }, { $set: { gained: true } })
-                })
+                });
             }
-
-
         }
         else message.channel.send(`You might not be registered, try doing ${client.config.prefix}addme command first.`);
     }
