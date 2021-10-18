@@ -5,7 +5,7 @@ class Snipelist extends Command {
         {
             const user = await client.db.collection("discordRankBotUsers").findOne({ discId: message.author.id });
             let targetUser;
-            let userName
+            let userName;
 
             if (!args[0]) {
                 await message.channel.send(`No target user provided, try \`${client.config.prefix}snipelist scoresaberID / @ping\``);
@@ -34,7 +34,7 @@ class Snipelist extends Command {
                 targetUser = await client.scoresaber.getUser(args[0]);
                 if (targetUser?.playerInfo?.playerId) {
                     targetUserScId = targetUser.playerInfo.playerId;
-                    userName = targetUser.playerInfo.playerName
+                    userName = targetUser.playerInfo.playerName;
                 }
                 else {
                     await message.channel.send(`Not a valid scoresaber user.\nMake sure the user exists at <https://scoresaber.com/u/${args[0]}>`);
@@ -45,9 +45,10 @@ class Snipelist extends Command {
                 await message.channel.send(`Not a valid target for a snipelist.\n Try \`${client.config.prefix}snipelist scoresaberID / @ping\``);
                 return;
             }
-            const botmsg = await message.channel.send("Gathering and comparing scores, this might take a moment.");
 
+            const botmsg = await message.channel.send("Gathering and comparing scores, this might take a moment.");
             const scoresFromUser = await client.db.collection("discordRankBotScores").find({ player: user.scId }).count();
+
             if (!scoresFromUser) {
                 await client.scoresaber.getAllScores(user.scId);
             }
@@ -56,7 +57,6 @@ class Snipelist extends Command {
             }
 
             const scoresFromTargetUser = await client.db.collection("discordRankBotScores").find({ player: targetUserScId }).count();
-            console.log(scoresFromTargetUser)
             if (!scoresFromTargetUser) {
                 await client.scoresaber.getAllScores(targetUserScId);
             }
@@ -67,19 +67,24 @@ class Snipelist extends Command {
             let targetScores;
             let snipeScoreHashes = [];
             let unplayedScoreHashes = [];
+            let userScores = [];
 
             if (args[1] === "ranked") {
                 targetScores = await client.db.collection("discordRankBotScores").find({ player: targetUserScId, ranked: true }).toArray();
+                userScores = await client.db.collection("discordRankBotScores").find({ player: user.scId, ranked: true }).toArray();
             }
             else if (args[1] === "unranked") {
                 targetScores = await client.db.collection("discordRankBotScores").find({ player: targetUserScId, ranked: false }).toArray();
+                userScores = await client.db.collection("discordRankBotScores").find({ player: user.scId, ranked: false }).toArray();
             }
             else {
                 targetScores = await client.db.collection("discordRankBotScores").find({ player: targetUserScId }).toArray();
+                userScores = await client.db.collection("discordRankBotScores").find({ player: user.scId }).toArray();
             }
 
-            for (let i = 0; targetScores.length > i; i++) {
-                const userScore = await client.db.collection("discordRankBotScores").findOne({ player: user.scId, leaderboardId: targetScores[i].leaderboardId });
+            for (let i = 0; i < targetScores.length; i++) {
+                const scoreIndex = userScores.findIndex(e => e.leaderboardId === targetScores[i].leaderboardId);
+
                 const songHash = {
                     hash: targetScores[i].hash,
                     difficulties: [
@@ -89,12 +94,14 @@ class Snipelist extends Command {
                         }
                     ]
                 }
-                if (!userScore) {
+
+                if (scoreIndex === -1) {
                     unplayedScoreHashes.push(songHash);
                 }
-                else if (userScore.score < targetScores[i].score) {
+                else if (userScores[scoreIndex].score < targetScores[i].score) {
                     snipeScoreHashes.push(songHash);
                 }
+
             }
             if (snipeScoreHashes.length == 0) {
                 botmsg.delete();
@@ -109,4 +116,3 @@ class Snipelist extends Command {
     }
 }
 module.exports = Snipelist;
-

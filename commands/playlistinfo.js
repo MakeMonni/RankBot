@@ -45,7 +45,7 @@ class PlaylistInfo extends Command {
             message.channel.send("Here is your info :)", mapInfoAttachment);
         }
         else {
-            message.channel.send("This is not a valid playlist data type. Supported types: json, bplist")
+            message.channel.send("This is not a valid playlist data type. Supported types: .json & .bplist")
         }
     }
 }

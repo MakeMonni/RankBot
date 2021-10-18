@@ -294,10 +294,10 @@ class BeatSaverUtils {
     }
 
     convertDiffNameVisual(diffName) {
-        if (diffName === "_ExpertPlus_SoloStandard" || diffName === "expertPlus") return "Expert+"
-        else if (diffName === "_Expert_SoloStandard" || diffName === "expert") return "Expert"
-        else if (diffName === "_Hard_SoloStandard" || diffName === "hard") return "Hard"
-        else if (diffName === "_Normal_SoloStandard" || diffName === "normal") return "Normal"
+        if (diffName === "_ExpertPlus_SoloStandard" || diffName === "expertPlus" || diffName === "ExpertPlus") return "Expert+"
+        else if (diffName === "_Expert_SoloStandard" || diffName === "expert" || diffName === "Expert") return "Expert"
+        else if (diffName === "_Hard_SoloStandard" || diffName === "hard"|| diffName === "Hard") return "Hard"
+        else if (diffName === "_Normal_SoloStandard" || diffName === "normal"|| diffName === "Normal") return "Normal"
         else return "Easy"
     }
 
