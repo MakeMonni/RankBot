@@ -1,3 +1,4 @@
+const { MessageAttachment } = require("discord.js");
 const Command = require("../core/command/command.js");
 
 class Addme extends Command {
@@ -6,11 +7,15 @@ class Addme extends Command {
             return message.channel.send(`Please use a scoresaber id... ${message.author}!`);
         } else if (args) {
             let id = args[0].replace(/\D/g, '');
-            console.log(id)
             let user = await client.scoresaber.getUser(id);
 
             if (!user) {
-                message.channel.send("Something went terribly wrong, check your scoresaber id and try again.")
+                await message.channel.send("Something went terribly wrong, check your scoresaber id and try again.")
+                return;
+            }
+
+            if (user.error) {
+                await message.channel.send(`Could not add you because of an error: \n${user.error.message}\nMake sure this link takes you to your profile <https://new.scoresaber.com/u/${id}>`);
                 return;
             }
 
@@ -29,14 +34,14 @@ class Addme extends Command {
                                 let addRole = message.guild.roles.cache.find(role => role.name === "Verified");
                                 await message.member.roles.set([addRole])
                                     .catch(console.log);
-                                UserRegistered(client, message, client.config.adminchannelID, user, id);
+                                userRegistered(client, message, client.config.adminchannelID, user, id);
                             } else message.channel.send(`You have been added and your role will be set with the next update, or if you are impatient you can run ${client.config.prefix}roleme.`);
                         } else {
                             if (message.member.roles.cache.some(role => role.name === 'landed')) {
                                 let addRole = message.guild.roles.cache.find(role => role.name === "Guest");
                                 await message.member.roles.set([addRole])
                                     .catch(console.log);
-                                UserRegistered(client, message, client.config.adminchannelID, user, id);
+                                userRegistered(client, message, client.config.adminchannelID, user, id);
                             } else message.channel.send("You have been added but unfortunately you will not get a role based on your rank as its not supported for international players.");
                         }
                     });
@@ -48,7 +53,7 @@ class Addme extends Command {
     }
 }
 
-async function UserRegistered(client, message, adminchannelID, user, id) {
+async function userRegistered(client, message, adminchannelID, user, id) {
     try {
         await message.author.send("You have successfully registered to the Finnish Beat Saber community discord. \nRemember to check the rules in the #info-etc channel and for further bot interaction go to #botstuff and enjoy your stay.")
     } catch (err) {
