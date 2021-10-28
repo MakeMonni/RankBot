@@ -23,47 +23,52 @@ class Test extends Command {
                     if (isFinite(args[1]) && args[1] >= 0 && args[1] <= 100) {
                         await client.scoresaber.getRecentScores(user.scId);
                         for (let i = 0; i < scores.length; i++) {
-                            if (scores[i].maxscore === 0) {
-                                let map;
+                            try {
+                                if (scores[i].maxscore === 0) {
+                                    let map;
 
-                                try { map = await client.beatsaver.findMapByHash(scores[i].hash); } catch (err) {
-                                    console.log("Map errored:\n" + err + "Hash: " + scores[i].hash)
-                                };
+                                    try { map = await client.beatsaver.findMapByHash(scores[i].hash); } catch (err) {
+                                        console.log("Map errored:\n" + err + "Hash: " + scores[i].hash)
+                                    };
 
-                                const versionIndex = map.versions.findIndex(versions => versions.hash === scores[i].hash);
-                                const difficultyData = map.versions[versionIndex].diffs.find(e => e.characteristic === client.beatsaver.findPlayCategory(scores[i].diff) && e.difficulty === client.beatsaver.convertDiffNameBeatSaver(scores[i].diff));
-                                let mapTotalNotes = difficultyData.notes;
+                                    const versionIndex = map.versions.findIndex(versions => versions.hash === scores[i].hash);
+                                    const difficultyData = map.versions[versionIndex].diffs.find(e => e.characteristic === client.beatsaver.findPlayCategory(scores[i].diff) && e.difficulty === client.beatsaver.convertDiffNameBeatSaver(scores[i].diff));
+                                    let mapTotalNotes = difficultyData.notes;
 
-                                // FIX 
-                                // Spaghetti here
+                                    // FIX 
+                                    // Spaghetti here
 
-                                let mapScores = await client.db.collection("beatSaverLocal").find({ leaderboardId: scores[i].leaderboardId, maxscore: { $gt: 1 } }).toArray();
+                                    let mapScores = await client.db.collection("beatSaverLocal").find({ leaderboardId: scores[i].leaderboardId, maxscore: { $gt: 1 } }).toArray();
 
-                                if (mapScores.length === 0) {
-                                    scores[i].maxscore = await client.scoresaber.calculateMaxScore(mapTotalNotes);
-                                    await client.db.collection("discordRankBotScores").updateMany({ leaderboardId: scores[i].leaderboardId }, { $set: { maxscore: scores[i].maxscore } });
+                                    if (mapScores.length === 0) {
+                                        scores[i].maxscore = await client.scoresaber.calculateMaxScore(mapTotalNotes);
+                                        await client.db.collection("discordRankBotScores").updateMany({ leaderboardId: scores[i].leaderboardId }, { $set: { maxscore: scores[i].maxscore } });
+                                    }
+                                    else if (mapScores[0].maxscore != 0) {
+                                        scores[i].maxscore = mapScores[0].maxscore;
+                                        await client.db.collection("discordRankBotScores").updateMany({ leaderboardId: scores[i].leaderboardId }, { $set: { maxscore: scores[i].maxscore } });
+                                    }
+                                    else {
+                                        scores[i].maxscore = await client.scoresaber.calculateMaxScore(mapTotalNotes);
+                                        await client.db.collection("discordRankBotScores").updateMany({ leaderboardId: scores[i].leaderboardId }, { $set: { maxscore: scores[i].maxscore } });
+                                    }
                                 }
-                                else if (mapScores[0].maxscore != 0) {
-                                    scores[i].maxscore = mapScores[0].maxscore;
-                                    await client.db.collection("discordRankBotScores").updateMany({ leaderboardId: scores[i].leaderboardId }, { $set: { maxscore: scores[i].maxscore } });
-                                }
-                                else {
-                                    scores[i].maxscore = await client.scoresaber.calculateMaxScore(mapTotalNotes);
-                                    await client.db.collection("discordRankBotScores").updateMany({ leaderboardId: scores[i].leaderboardId }, { $set: { maxscore: scores[i].maxscore } });
+
+                                if (Comparer(args[0], args[1] / 100, scores[i].score / scores[i].maxscore)) {
+                                    const songHash = {
+                                        hash: scores[i].hash,
+                                        difficulties: [
+                                            {
+                                                characteristic: client.beatsaver.findPlayCategory(scores[i].diff),
+                                                name: client.beatsaver.convertDiffNameBeatSaver(scores[i].diff)
+                                            }
+                                        ]
+                                    }
+                                    hashlist.push(songHash);
                                 }
                             }
-
-                            if (Comparer(args[0], args[1] / 100, scores[i].score / scores[i].maxscore)) {
-                                const songHash = {
-                                    hash: scores[i].hash,
-                                    difficulties: [
-                                        {
-                                            characteristic: client.beatsaver.findPlayCategory(scores[i].diff),
-                                            name: client.beatsaver.convertDiffNameBeatSaver(scores[i].diff)
-                                        }
-                                    ]
-                                }
-                                hashlist.push(songHash);
+                            catch (err) {
+                                console.log(err + "\n" + scores[i])
                             }
                         }
 
