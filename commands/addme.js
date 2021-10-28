@@ -35,7 +35,20 @@ class Addme extends Command {
                                 await message.member.roles.set([addRole])
                                     .catch(console.log);
                                 userRegistered(client, message, client.config.adminchannelID, user, id);
-                            } else message.channel.send(`You have been added and your role will be set with the next update, or if you are impatient you can run ${client.config.prefix}roleme.`);
+                            }
+                            else if (message.member.roles.cache.some(role => role.name === 'Guest')) {
+                                const addRole = message.guild.roles.cache.find(role => role.name === "Verified");
+                                const deleteRole = message.guild.roles.cache.find(role => role.name === "Guest")
+                                await message.member.roles.add([addRole])
+                                    .catch(console.log())
+                                await message.member.roles.remove([deleteRole])
+                                    .catch(console.log())
+                                message.channel.send(`You have been added and your role will be set with the next update, or if you are impatient you can run ${client.config.prefix}roleme.`);
+                            }
+                            else
+                            {
+                                await message.channel.send("This should not happen :^) <@146668467649642496>");
+                            }
                         } else {
                             if (message.member.roles.cache.some(role => role.name === 'landed')) {
                                 let addRole = message.guild.roles.cache.find(role => role.name === "Guest");
