@@ -9,6 +9,7 @@ class Test extends Command {
 
         const user = await client.db.collection("discordRankBotUsers").findOne({ discId: message.author.id });
         if (user !== null) {
+            const botmsg = await message.channel.send("Gathering scores, one moment please :)")
             const scores = await client.db.collection("discordRankBotScores").find({ player: user.scId, ranked: true }).toArray();
             if (scores.length === 0) {
                 await message.channel.send(`Try using the \`${client.config.prefix}gains\` command first`);
@@ -68,7 +69,8 @@ class Test extends Command {
                                 }
                             }
                             catch (err) {
-                                console.log(err + "\n" + scores[i])
+                                console.log(err);
+                                console.log(scores[i]);
                             }
                         }
 
@@ -77,6 +79,7 @@ class Test extends Command {
                             return;
                         }
 
+                        botmsg.delete();
                         const playlistAttachment = await client.misc.createPlaylist(`Improve_${args[0]}_${args[1]}`, hashlist, "https://cdn.discordapp.com/attachments/840144337231806484/900475734462705694/stronk.png");
                         await message.channel.send(`${message.author}, here is your playlist. Time to improve\nIt has ${hashlist.length} maps.`, playlistAttachment);
                     }
