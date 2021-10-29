@@ -1,6 +1,6 @@
 const Command = require("../core/command/command.js");
 
-class Test extends Command {
+class Fix extends Command {
     async run(client, message, args) {
         if (client.checkIfOwner(message)) {
             let scores = await client.db.collection("discordRankBotScores").find().toArray();
@@ -17,4 +17,4 @@ class Test extends Command {
         }
     }
 }
-module.exports = Test;
+module.exports = Fix;

@@ -297,12 +297,18 @@ class ScoreSaberUtils {
         }
     }
 
+    //115
+    //2x 115 115 115 115
+    //4x 115 115 115 115 115 115 115 115 115
+    //8x 115 
     async calculateMaxScore(notes) {
         if (notes == 1) return 115;
         else if (notes <= 4) return 115 + (notes - 1) * 115 * 2;
-        else if (notes <= 13) return 115 + 4 * 115 * 2 + (notes - 4) * 115 * 4;
+        else if (notes <= 13) return 115 + 4 * 115 * 2 + (notes - 5) * 115 * 4;
         return 115 + 4 * 115 * 2 + 8 * 115 * 4 + (notes - 13) * 115 * 8
     }
 
 }
 module.exports = ScoreSaberUtils;
+
+
