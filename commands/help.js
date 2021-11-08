@@ -21,7 +21,7 @@ class Help extends Command {
             }
             try {
                 await message.author.send(`Here are all the available commands usable with ` +
-                    `the ${client.config.prefix} prefix\nExample \`${client.config.prefix}${commands[0]}\` ${commandString}` + "```");
+                    `the ${client.config.prefix} prefix\nCommands and what they do can also be found here <https://github.com/MakeMonni/BeatSaberRankBot/wiki/Commands>\nExample \`${client.config.prefix}${commands[0]}\` ${commandString}` + "```");
                 await message.channel.send("Sent you a dm, hope it helps.")
             }
             catch {

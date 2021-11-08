@@ -2,7 +2,7 @@ const Command = require("../core/command/command.js");
 const Discord = require("discord.js");
 const fetch = require('node-fetch');
 
-class Test extends Command {
+class PlaylistUpdate extends Command {
     async run(client, message, args) {
         if (!message.attachments.array()[0]) {
             await message.channel.send("No attachment provided.")
@@ -32,7 +32,7 @@ class Test extends Command {
                     }
                     else if (mapHash !== map?.versions[0].hash) {
                         mapsUpdated++;
-                        delete data.songs[i].levelid;
+                        data.songs[i].levelid = `custom_level_${map.versions[0].hash}`;
                         data.songs[i].hash = map.versions[0].hash;
                     }
                 }
@@ -54,4 +54,4 @@ class Test extends Command {
         }
     }
 }
-module.exports = Test;
+module.exports = PlaylistUpdate;
