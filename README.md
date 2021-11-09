@@ -1,6 +1,4 @@
-BeatSaberRankBot
+A bot created for the Finnish Beat Saber community discord Tahti Sapeli.
+Does various things such as tracks peoples scores, gives roles on their rank and other utility/safety features.
 
-This bot gives roles based on their scoresaber country rank on discord.
-
-Created by Make#6000
-Feel free to whisper me on discord for info.
+Message me on discord Make#6000 if you have any questions.
