@@ -1,3 +1,5 @@
+const Discord = require("discord.js");
+
 class MemberHandler {
     constructor(client, db, config) {
         this.client = client;
@@ -6,7 +8,7 @@ class MemberHandler {
     }
 
     init() {
-        this.client.on("guildMemberAdd", member => {
+        this.client.on("guildMemberAdd", async member => {
             if (member.guild.id === this.config.guildId) {
                 const role = member.guild.roles.cache.find(role => role.name === "landed");
                 member.roles.add(role);
@@ -34,9 +36,34 @@ class MemberHandler {
     };
 }
 
-function newMemberTimerMessage(client, member, adminchannelID) {
+async function newMemberTimerMessage(client, member, adminchannelID) {
     if (member.roles.cache.find(role => role.name === "landed")) {
-        client.channels.cache.get(adminchannelID).send(`${member} joined 24h ago and has landed role still and should be kicked.`);
+        let botmsg = await client.channels.cache.get(adminchannelID).send(`${member} joined 24h ago and has landed role still and should be kicked.\nKick?`);
+        await botmsg.react(`✅`);
+        await botmsg.react(`❌`);
+
+        //2 days time
+        const filter = reaction => ['✅', '❌'].includes(reaction.emoji.name);
+        const collector = botmsg.createReactionCollector(filter, { time: 1000 * 60 * 60 * 24 * 2 });
+        collector.on('collect', async ({ emoji }) => {
+            const mapArray = Array.from(emoji.reaction.users.cache);
+            const reactedUser = `<@${mapArray[1][0]}>`
+            if (emoji.name === '✅') {
+                try {
+                    await member.send(`Hello you were kicked from the Finnish BS community Discord Tahti Sapeli for not registering in time, feel free to rejoin when you are ready to register. \nHei, sinut potkittiin pois suomi beat saber discordista koska et rekisteröitynyt ajoissa, voit liittyä takaisin kun olet valmis rekisteröitymään. \nhttps://discord.gg/qCtX7yBv7J`);
+                }
+                catch (err) {
+                    console.log(`Could not send dm`, err)
+                }
+                await botmsg.reactions.removeAll();
+                await member.kick(`Did not register in time. Confirmed by: ${mapArray[1][1].username}`);
+                await botmsg.edit(`${reactedUser} confirmed kick of ${member}`);
+            }
+            else {
+                await botmsg.reactions.removeAll();
+                await botmsg.edit(`${reactedUser} denied kick of ${member}`);
+            }
+        });
     }
 }
 module.exports = MemberHandler;
