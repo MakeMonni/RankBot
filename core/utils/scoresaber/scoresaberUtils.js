@@ -54,7 +54,7 @@ class ScoreSaberUtils {
         }
     }
 
-    async updateRole(scoresaberId, discordUsername, discordId) {
+    async updateRole(scoresaberId, discordUsername, discordId, nolog) {
         const scUser = await this.getUser(scoresaberId);
         const guild = await this.client.guilds.fetch(this.config.guildId);
 
@@ -78,7 +78,8 @@ class ScoreSaberUtils {
             let addRole = null;
 
             if (playerRank === -1) {
-                console.log(`${discordUsername} seems to be inactive according to scoresaber, removing Top role.`);
+                if (!nolog) console.log(`${discordUsername} seems to be inactive according to scoresaber, removing Top role.`);
+
                 inactive = true;
             } else if (playerRank <= 5) {
                 addRole = guild.roles.cache.filter(role => role.name === "Top 5").first();
@@ -97,9 +98,12 @@ class ScoreSaberUtils {
             }
 
             if (!inactive) {
-                console.log(`Adding role ${addRole.name} to user ${discordUsername}.`);
-                memberRoles.push(addRole);
+                if (!nolog) {
+                    console.log(`Adding role ${addRole.name} to user ${discordUsername}.`);
+                    memberRoles.push(addRole);
+                }
             }
+            
             member.roles.set(memberRoles);
         } catch (err) {
             console.log(`Failed to automaticly update role for user: ${discordUsername}. Reason: ${err}, scID: ${scoresaberId}`);
@@ -122,7 +126,7 @@ class ScoreSaberUtils {
 
             for (let i = 0; i < dbres.length; i++) {
                 try {
-                    await this.client.scoresaber.updateRole(dbres[i].scId, dbres[i].discName, dbres[i].discId);
+                    await this.client.scoresaber.updateRole(dbres[i].scId, dbres[i].discName, dbres[i].discId, true);
                 }
                 catch {
                     console.log(`Failed to update role for ${dbres[i].discName}, scId: ${dbres[i].scId} discId: ${dbres[i].discId}`);
