@@ -100,8 +100,8 @@ class ScoreSaberUtils {
             if (!inactive) {
                 if (!nolog) {
                     console.log(`Adding role ${addRole.name} to user ${discordUsername}.`);
-                    memberRoles.push(addRole);
                 }
+                memberRoles.push(addRole);
             }
             
             member.roles.set(memberRoles);
