@@ -1,4 +1,3 @@
-const { MessageAttachment } = require("discord.js");
 const Command = require("../core/command/command.js");
 
 class Addme extends Command {
