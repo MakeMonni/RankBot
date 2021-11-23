@@ -119,7 +119,7 @@ class Gains extends Command {
 
                 const embed = new Discord.MessageEmbed()
                     .setTitle(`Your gains`)
-                    .setURL(`https://scoresaber.com/u/${user.scId}&sort=2`)
+                    .setURL(`https://scoresaber.com/u/${user.scId}?page=1&sort=recent`)
                     .setThumbnail(`${userAvatar(message.author.avatarURL())}`)
                     .addField(`Rank`, `${rankChange} ${Emote(user.rank, scProfile.playerInfo.rank, message)} ${scProfile.playerInfo.rank}`)
                     .addField(`PP`, `${ppGained} ${Emote(scProfile.playerInfo.pp, user.pp, message)} ${scProfile.playerInfo.pp}`)
