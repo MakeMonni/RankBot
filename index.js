@@ -11,7 +11,7 @@ MongoClient.connect(config.mongourl, async (err, client) => {
     const commands = await CommandLoader.loadCommands();
     const botClient = new BotClient(db, config, commands);
 
-    const statusUpdate = schedule.scheduleJob('* * * * *', async function () {
+    const statusUpdate = schedule.scheduleJob('*/2 * * * *', async function () {
         //Add check if status is alrdy up later
         await botClient.user.setActivity(`Need help? Use ${botClient.config.prefix}help`);
     })

@@ -3,9 +3,12 @@
     "token" : "",
     "updateIntervalHours": ,
     "guildId" : "",
-    "country": "FI",
+    "country": "",
     "adminchannelID" : "",
     "mongourl" : "",
     "dbName" : "",
-    "hmdList" : []
+    "hmdList" : ["CV1", "Quest_1", "Quest_2", "Rift_S", "Vive", "Index", "WMR", "Cosmos", "Reverb_G2"],
+    "twitchClientId": "",
+    "twitchClientSecret": "",
+    "streamAdvertisementChannelID": ""
 }

@@ -3,7 +3,7 @@ const fetch = require('node-fetch');
 const atob = require('atob');
 const WebScoketClient = require('websocket').client;
 const yauzl = require("yauzl");
-const fs = require("fs")
+const fs = require("fs");
 
 const options = {
     headers: { 'User-Agent': "FinnishBSDiscordBot/1.0.0" }
