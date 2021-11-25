@@ -63,16 +63,19 @@ class TAUtils {
                                 }
                                 if (data.Type === 4) {
                                     {
-                                        const object = data.SpecificPacket.ChangedObject;
-                                        const playerScore = {
-                                            playerName: object.Name,
-                                            playerId: object.UserId,
-                                            score: object.Score,
-                                            combo: object.Combo,
-                                            misses: object.Misses,
-                                            acc: Math.round(object.Accuracy * 100 * 100) / 100
+                                        if(data?.SpecificPacket?.ChangedObject)
+                                        {
+                                            const object = data?.SpecificPacket?.ChangedObject;
+                                            const playerScore = {
+                                                playerName: object.Name,
+                                                playerId: object.UserId,
+                                                score: object.Score,
+                                                combo: object.Combo,
+                                                misses: object.Misses,
+                                                acc: Math.round(object.Accuracy * 100 * 100) / 100
+                                            }
+                                            connection.sendUTF(JSON.stringify(playerScore));
                                         }
-                                        connection.sendUTF(JSON.stringify(playerScore));
                                     }
                                 }
                                 if (msgJSON.Type === 5) //console.log("Room created")
