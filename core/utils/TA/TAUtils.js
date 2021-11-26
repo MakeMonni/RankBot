@@ -14,17 +14,13 @@ class TAUtils {
             httpServer: server
         });
 
-
-
-
-
-        const wsConnect = async function (client, serverconnection) {
+        const wsConnect = async function (client) {
             const wsClient = new WebScoketClient();
             wsClient.connect('ws://ta.monni.eu:3333');
             wsClient.on('connectFailed', function (error) {
                 console.log('Connection failed error: ', error);
             });
-            wsClient.on('connect', async function (conn, serverconnection) {
+            wsClient.on('connect', async function (conn) {
                 console.log("TA websocket connected");
 
                 wsServer.on('request', function (request) {
@@ -47,44 +43,28 @@ class TAUtils {
                             if (message.type === 'utf8') {
                                 const msgJSON = JSON.parse(message.utf8Data);
                                 const data = msgJSON.SpecificPacket;
-                                if (msgJSON.Type !== 1 && data.Type !== 0 && data.Type !== 4 && data.Type !== 5 && data.Type !== 6 && data.Type !== 7 && data.Type !== 8 && data.Type !== 9 && data.Type !== 1 && data.Type !== 2) {
-                                    //console.log(data);
-                                }
-                                if (data.Type === 1) {
-                                    //console.log("statusupdate")
-                                }
-                                if (data.Type === 2) {
-                                    //console.log("Player disconnected")
-                                }
                                 if (data.Type === 3) {
                                     if (data.ClientType === 0) console.log("Player connected")
                                     else if (data.ClientType === 1) console.log("Coordinator connected")
-
                                 }
                                 if (data.Type === 4) {
-                                    {
-                                        if(data?.SpecificPacket?.ChangedObject)
-                                        {
-                                            const object = data?.SpecificPacket?.ChangedObject;
-                                            const playerScore = {
-                                                playerName: object.Name,
-                                                playerId: object.UserId,
-                                                score: object.Score,
-                                                combo: object.Combo,
-                                                misses: object.Misses,
-                                                acc: Math.round(object.Accuracy * 100 * 100) / 100
-                                            }
-                                            connection.sendUTF(JSON.stringify(playerScore));
+                                    if (data?.SpecificPacket?.ChangedObject) {
+                                        const object = data?.SpecificPacket?.ChangedObject;
+                                        const playerScore = {
+                                            playerName: object.Name,
+                                            playerId: object.UserId,
+                                            score: object.Score,
+                                            combo: object.Combo,
+                                            misses: object.Misses,
+                                            acc: object.Accuracy
                                         }
+                                        connection.sendUTF(JSON.stringify(playerScore));
                                     }
                                 }
-                                if (msgJSON.Type === 5) //console.log("Room created")
                                 if (data.Type === 6) {
-                                    //console.log("Coordinator updated map choice")
+                                    const object = { type: "mapChange" }
+                                    connection.sendUTF(JSON.stringify(object));
                                 }
-                                if (msgJSON.Type === 7) //console.log("Room destroyed")
-                                if (msgJSON.Type === 8) //console.log("Map chosen")
-                                if (msgJSON.Type === 9) console.log("Map started")
                             }
                         }
                         catch (err) { console.log(err) }

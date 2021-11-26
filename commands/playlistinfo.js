@@ -24,6 +24,9 @@ class PlaylistInfo extends Command {
 
                 let map = await client.beatsaver.findMapByHash(mapHash);
 
+                // FIX 
+                // NPS is broken
+
                 if (!map) {
                     mapInfo = mapInfo + (`Could not find map ${data.songs[i].hash}\n-=-\n`)
                 }
