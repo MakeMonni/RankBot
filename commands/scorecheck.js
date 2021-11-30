@@ -22,7 +22,6 @@ class ScoreCheck extends Command {
         }
 
         const score = await client.db.collection("discordRankBotScores").findOne({ player: userId, leaderboardId: parseInt(args[0]) });
-        console.log(score);
         if (!score) {
             await message.channel.send("No score found by that user on that map");
             return;
@@ -47,7 +46,7 @@ class ScoreCheck extends Command {
             const hitTracker = score.beatsavior.trackers.hitTracker;
             const winTracker = score.beatsavior.trackers.winTracker;
 
-            embed.addField(`Beatsavior`, `Swing: ${round(accTracker.accLeft)} | ${round(accTracker.accRight)}\nTD: ${round(accTracker.leftTimeDependence)} | ${round(accTracker.rightTimeDependence)}`);
+            embed.addField(`Beatsavior`, `Swing: ${round(accTracker.accLeft)} | ${round(accTracker.accRight)} \nFC acc: ${round((accTracker.accLeft + accTracker.accRight) / 2 / 115 * 100)}%\nTD: ${round(accTracker.leftTimeDependence)} | ${round(accTracker.rightTimeDependence)}`);
             embed.addField(`Hit & combo`, `Notes: ${hitTracker.leftNoteHit} | ${hitTracker.rightNoteHit}\n:boom: ${hitTracker.bombHit} | :x: ${hitTracker.miss} | Walls hit: ${hitTracker.nbOfWallHit} | :pause_button: ${winTracker.nbOfPause} \nHighestCombo: ${hitTracker.maxCombo}`)
         }
 
