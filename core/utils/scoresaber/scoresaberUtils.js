@@ -293,12 +293,15 @@ class ScoreSaberUtils {
 
     async scoreTracker() {
         const users = await this.db.collection("discordRankBotScores").distinct("player");
+        let usersUpdated = 0;
         for (let i = 0; i < users.length; i++) {
             const latestScore = await this.db.collection("discordRankBotScores").find({ player: users[i] }).sort({ date: -1 }).limit(1).toArray();
             if (latestScore[0].date < (Date.now() - 86400000)) {
                 await this.getRecentScores(users[i])
+                usersUpdated++;
             }
         }
+        console.log("Updated scores for", usersUpdated, "users")
     }
 
     //115
@@ -314,5 +317,3 @@ class ScoreSaberUtils {
 
 }
 module.exports = ScoreSaberUtils;
-
-

@@ -90,3 +90,5 @@ typings/
 .dynamodb/
 
 ScrapeSaverData/
+
+asd.json
