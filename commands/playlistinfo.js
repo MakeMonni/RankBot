@@ -18,14 +18,12 @@ class PlaylistInfo extends Command {
                 console.log(err)
             }
 
+            let difficultyDataArr = [];
             let mapInfo = "Playlistdata:\n";
             for (let i = 0; i < data.songs.length; i++) {
                 let mapHash = data.songs[i].hash;
 
                 let map = await client.beatsaver.findMapByHash(mapHash);
-
-                // FIX 
-                // NPS is broken
 
                 if (!map) {
                     mapInfo = mapInfo + (`Could not find map ${data.songs[i].hash}\n-=-\n`)
@@ -37,11 +35,30 @@ class PlaylistInfo extends Command {
                         const difficultyData = map.versions[versionIndex]?.diffs.find(e => e.characteristic === client.beatsaver.findPlayCategory(data.songs[i].difficulties[0].characteristic) && e.difficulty === client.beatsaver.convertDiffNameBeatSaver(data.songs[i].difficulties[0].name));
 
                         if (!difficultyData) mapInfo = mapInfo + `\nBut map did not have difficulty ${data.songs[i].difficulties[0].name}...`;
-                        else mapInfo = mapInfo + ` | NJS: ${difficultyData.njs} | NPS: ${Math.round(difficultyData.notes / difficultyData.length * 100) / 100} | ${data.songs[i].difficulties[0].characteristic}-${client.beatsaver.convertDiffNameVisual(data.songs[i].difficulties[0].name)}`;
+                        else {
+                            const diff = client.beatsaver.convertDiffNameVisual(data.songs[i].difficulties[0].name);
+                            const category = data.songs[i].difficulties[0].characteristic;
+                            difficultyDataArr.push(difficultyData);
+
+                            mapInfo = mapInfo + ` | NJS: ${difficultyData.njs} | NPS: ${Math.round(difficultyData.nps * 100) / 100} | ${category}-${diff}`;
+                        }
                     }
                     mapInfo = mapInfo + `\n-=-\n`;
                 }
             }
+
+            if (difficultyDataArr.length > 1) {
+                const peakNPS = Math.round(Math.max.apply(Math, difficultyDataArr.map(function (e) { return e.nps })) * 100) / 100;
+                const minNPS = Math.round(Math.min.apply(Math, difficultyDataArr.map(function (e) { return e.nps })) * 100) / 100;
+                const avgNPS = Math.round(difficultyDataArr.reduce((p, c) => p + c.nps, 0) / difficultyDataArr.length * 100) / 100;
+                const peakNJS = Math.max.apply(Math, difficultyDataArr.map(function (e) { return e.njs }))
+                const minNJS = Math.min.apply(Math, difficultyDataArr.map(function (e) { return e.njs }))
+                const avgNJS = Math.round(difficultyDataArr.reduce((p, c) => p + c.njs, 0) / difficultyDataArr.length * 100) / 100;
+
+                mapInfo = `=- Peak - Avg - Min -=\nNPS: ${peakNPS} - ${avgNPS} - ${minNPS}\nNJS: ${peakNJS} - ${avgNJS} - ${minNJS}\n-===========-\n` + mapInfo
+            }
+            mapInfo = `Playlist has ${data.songs.length} maps.\n` + mapInfo;
+
             const mapInfoBuffer = Buffer.from(mapInfo, "utf-8");
             const mapInfoAttachment = new Discord.MessageAttachment(mapInfoBuffer, `Playlist_${data.playlistTitle}_Info.txt`);
 
