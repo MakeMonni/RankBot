@@ -30,7 +30,7 @@ class PlaylistInfo extends Command {
                 }
                 else {
                     mapInfo = mapInfo + (`${map.metadata.songName} ${map.metadata.songSubName} - ${map.metadata.songAuthorName} by ${map.metadata.levelAuthorName}\nKey: ${map.key} | BPM: ${map.metadata.bpm}`);
-                    if (data.songs[i]?.difficulties !== undefined) {
+                    if (data.songs[i]?.difficulties !== undefined && data.songs[i]?.difficulties.length > 0) {
                         const versionIndex = map.versions.findIndex(versions => versions.hash === data.songs[i].hash.toUpperCase());
                         const difficultyData = map.versions[versionIndex]?.diffs.find(e => e.characteristic === client.beatsaver.findPlayCategory(data.songs[i].difficulties[0].characteristic) && e.difficulty === client.beatsaver.convertDiffNameBeatSaver(data.songs[i].difficulties[0].name));
 
