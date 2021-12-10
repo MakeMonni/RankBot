@@ -12,17 +12,14 @@ MongoClient.connect(config.mongourl, async (err, client) => {
     const botClient = new BotClient(db, config, commands);
 
     const statusUpdate = schedule.scheduleJob('*/2 * * * *', async function () {
-        //Add check if status is alrdy up later
         await botClient.user.setActivity(`Need help? Use ${botClient.config.prefix}help`);
     })
 
-    //France time
     const daily = schedule.scheduleJob('0 7 * * *', async function () {
         console.log("Daily updates");
         await botClient.scoresaber.scoreTracker();
     });
 
-    //France time
     const roleUpdates = schedule.scheduleJob('0 0,6,12,18 * * *', async function () {
         if (botClient.updates) {
             await botClient.scoresaber.updateAllRoles();
@@ -31,6 +28,15 @@ MongoClient.connect(config.mongourl, async (err, client) => {
 
     await botClient.login(config.token);
     await botClient.user.setActivity(`Need help? Use ${botClient.config.prefix}help`);
+
+    const landedUsers = await db.collection("landingMemberList").find().toArray();
+    if (landedUsers.length > 0) {
+        for (let i = 0; i < landedUsers.length; i++) {
+            const toBeKickedIn = landedUsers[i].toBeKickedDate - Date.now();
+            if (toBeKickedIn > 0) setTimeout(botClient.memberHandler.newMemberTimerMessage, landedUsers[i].toBeKickedDate - Date.now(), botClient, landedUsers[i].userId);
+            else botClient.memberHandler.newMemberTimerMessage(botClient, landedUsers[i].userId);
+        }
+    }
 
     await db.collection("discordRankBotScores").createIndex({ hash: 1, player: 1, leaderboardId: 1 });
     await db.collection("discordRankBotUsers").createIndex({ scId: 1, discId: 1 });
