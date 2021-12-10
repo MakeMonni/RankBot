@@ -68,6 +68,7 @@ class MemberHandler {
                 }
             });
         }
+        else await botClient.db.collection("landingMemberList").deleteOne({ userId: member.user.id });
     }
 }
 module.exports = MemberHandler;
