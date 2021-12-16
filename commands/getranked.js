@@ -6,7 +6,7 @@ class GetRanked extends Command {
     async run(client, message, args) {
         if (client.checkIfOwner(message)) {
             console.log(`Requesting ranked maps.`);
-            const newMaps = await client.db.collection("scoresaberRankedMaps").find().toArray();
+            const newMaps = await client.scoresaber.returnRankedMaps();
 
             if (!newMaps) {
                 await message.channel.send("No new maps.");
@@ -26,7 +26,7 @@ class GetRanked extends Command {
             await message.channel.send(`New maps: ${newMaps.length}.`)
 
             let addedHashes = [];
-            1
+1
             if (args[0] === "nopost") return
             else {
                 for (let i = 0; i < newMaps.length; i++) {
