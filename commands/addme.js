@@ -7,18 +7,19 @@ class Addme extends Command {
         } else if (args) {
             let id = args[0].replace(/\D/g, '');
             let user = await client.scoresaber.getUser(id);
+            console.log(user);
 
             if (!user) {
                 await message.channel.send("Something went terribly wrong, check your scoresaber id and try again.")
                 return;
             }
 
-            if (user.error) {
-                await message.channel.send(`Could not add you because of an error: \n${user.error.message}\nMake sure this link takes you to your profile <https://new.scoresaber.com/u/${id}>`);
+            if (user.errorMessage) {
+                await message.channel.send(`Could not add you because of an error: \n${user.errorMessage}\nMake sure this link takes you to your profile <https://new.scoresaber.com/u/${id}>`);
                 return;
             }
 
-            let myobj = { discId: message.author.id, scId: id, discName: message.author.username, country: user.playerInfo.country };
+            let myobj = { discId: message.author.id, scId: id, discName: message.author.username, country: user.country };
             let query = { discId: message.author.id };
 
             client.db.collection("discordRankBotUsers").find(query).toArray(async function (err, dbres) {
@@ -26,9 +27,9 @@ class Addme extends Command {
                 if (dbres?.length < 1) {
                     client.db.collection("discordRankBotUsers").insertOne(myobj, async function (err) {
                         if (err) throw err;
-                        console.log(`inserted ${message.author.username} with sc ${user.playerInfo.playerName}`);
+                        console.log(`inserted ${message.author.username} with sc ${user.name}`);
 
-                        if (user.playerInfo.country === client.config.country) {
+                        if (user.country === client.config.country) {
                             if (message.member.roles.cache.some(role => role.name === 'landed')) {
                                 let addRole = message.guild.roles.cache.find(role => role.name === "Verified");
                                 await message.member.roles.set([addRole])
@@ -71,7 +72,7 @@ async function userRegistered(client, message, adminchannelID, user, id) {
     } catch (err) {
         console.log("Could not dm user" + err)
     }
-    await client.channels.cache.get(adminchannelID).send(`${message.author.username} registered. Country: ${user.playerInfo.country} \n<https://scoresaber.com/u/${id}>`)
+    await client.channels.cache.get(adminchannelID).send(`${message.author.username} registered. Country: ${user.country} \n<https://scoresaber.com/u/${id}>`)
 }
 
 module.exports = Addme;

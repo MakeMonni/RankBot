@@ -37,7 +37,12 @@ class MemberHandler {
 
     async newMemberTimerMessage(botClient, memberId) {
         const guild = await botClient.guilds.fetch(botClient.config.guildId);
-        const member = await guild.members.fetch({ user: memberId, force: true });
+        let member;
+        try { member = await guild.members.fetch({ user: memberId, force: true }); }
+        catch (err) {
+            console.log("Couldnt find member", err);
+            return;
+        }
         if (member.roles.cache.find(role => role.name === "landed")) {
             let botmsg = await botClient.channels.cache.get(botClient.config.adminchannelID).send(`${member} joined 24h ago and has landed role still and should be kicked.\nKick?`);
             await botmsg.react(`✅`);

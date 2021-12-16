@@ -109,6 +109,9 @@ class BeatSaverUtils {
             try {
                 map = await this.getMapDataByHash(hash);
                 if (map == null) return null;
+                else {
+                    map = await this.db.collection("beatSaverLocal").findOne({ versions: { $elemMatch: { hash: hash.toUpperCase() } } });
+                }
             } catch (err) {
                 console.log(err);
                 return null;
@@ -127,6 +130,9 @@ class BeatSaverUtils {
             try {
                 map = await this.getMapDataByKey(key);
                 if (map == null) return null;
+                else {
+                    map = await this.db.collection("beatSaverLocal").findOne({ key: key.toUpperCase() });
+                }
             } catch (err) {
                 console.log(err);
                 return null;
@@ -296,8 +302,8 @@ class BeatSaverUtils {
     convertDiffNameVisual(diffName) {
         if (diffName === "_ExpertPlus_SoloStandard" || diffName === "expertPlus" || diffName === "ExpertPlus") return "Expert+"
         else if (diffName === "_Expert_SoloStandard" || diffName === "expert" || diffName === "Expert") return "Expert"
-        else if (diffName === "_Hard_SoloStandard" || diffName === "hard"|| diffName === "Hard") return "Hard"
-        else if (diffName === "_Normal_SoloStandard" || diffName === "normal"|| diffName === "Normal") return "Normal"
+        else if (diffName === "_Hard_SoloStandard" || diffName === "hard" || diffName === "Hard") return "Hard"
+        else if (diffName === "_Normal_SoloStandard" || diffName === "normal" || diffName === "Normal") return "Normal"
         else return "Easy"
     }
 

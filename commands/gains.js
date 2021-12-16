@@ -104,9 +104,9 @@ class Gains extends Command {
 
                 await updateUserInfo(scProfile, message, client);
 
-                const ppGained = Math.round((scProfile.playerInfo.pp - user.pp) * 100) / 100;
-                const rankChange = user.rank - scProfile.playerInfo.rank;
-                const countryRankChange = user.countryRank - scProfile.playerInfo.countryRank;
+                const ppGained = Math.round((scProfile.pp - user.pp) * 100) / 100;
+                const rankChange = user.rank - scProfile.rank;
+                const countryRankChange = user.countryRank - scProfile.countryRank;
                 const lengthString = new Date(totalLength * 1000).toISOString().substr(11, 8);
                 const averageNPS = Math.round(totalNotes / totalLength * 100) / 100;
                 const averageAccuracyMaps = Math.round(totalAcc / (newScores.length - erroredMaps) * 10000) / 100 + "%";
@@ -121,9 +121,9 @@ class Gains extends Command {
                     .setTitle(`Your gains`)
                     .setURL(`https://scoresaber.com/u/${user.scId}?page=1&sort=recent`)
                     .setThumbnail(`${userAvatar(message.author.avatarURL())}`)
-                    .addField(`Rank`, `${rankChange} ${Emote(user.rank, scProfile.playerInfo.rank, message)} ${scProfile.playerInfo.rank}`)
-                    .addField(`PP`, `${ppGained} ${Emote(scProfile.playerInfo.pp, user.pp, message)} ${scProfile.playerInfo.pp}`)
-                    .addField(`Country :flag_${scProfile.playerInfo.country.toLowerCase()}:`, `${countryRankChange} ${Emote(user.countryRank, scProfile.playerInfo.countryRank, message)} ${scProfile.playerInfo.countryRank}`)
+                    .addField(`Rank`, `${rankChange} ${Emote(user.rank, scProfile.rank, message)} ${scProfile.rank}`)
+                    .addField(`PP`, `${ppGained} ${Emote(scProfile.pp, user.pp, message)} ${scProfile.pp}`)
+                    .addField(`Country :flag_${scProfile.country.toLowerCase()}:`, `${countryRankChange} ${Emote(user.countryRank, scProfile.countryRank, message)} ${scProfile.countryRank}`)
                     .setFooter(`In the last ${time}.`)
 
                 if (newScores.length > 0) {
@@ -179,7 +179,7 @@ class Gains extends Command {
 module.exports = Gains;
 
 async function updateUserInfo(scProfile, message, client) {
-    await client.db.collection("discordRankBotUsers").updateOne({ discId: message.author.id }, { $set: { discName: message.author.username, pp: scProfile.playerInfo.pp, gainsDate: Date.now(), rank: scProfile.playerInfo.rank, countryRank: scProfile.playerInfo.countryRank } });
+    await client.db.collection("discordRankBotUsers").updateOne({ discId: message.author.id }, { $set: { discName: message.author.username, pp: scProfile.pp, gainsDate: Date.now(), rank: scProfile.rank, countryRank: scProfile.countryRank } });
 }
 
 function Emote(val1, val2, message) {

@@ -10,17 +10,17 @@ class Roleme extends Command {
                 if (err) throw err;
                 let user = await client.scoresaber.getUser(dbres[0].scId);
 
-                if (!user.playerInfo) {
+                if (!user.id) {
                     await message.channel.send("Something went terribly wrong, you can try again in a moment.");
                     return;
                 }
 
-                if (user.playerInfo.country !== client.config.country) {
+                if (user.country !== client.config.country) {
                     await message.channel.send("Sorry you are not in the correct country.");
                     return;
                 }
 
-                console.log(`Player: ${user.playerInfo.playerName} countryrank: ${user.playerInfo.countryRank}`);
+                console.log(`Player: ${user.name} countryrank: ${user.countryRank}`);
                 try {
                     await client.scoresaber.updateRole(dbres[0].scId, message.author.username, message.author.id);
                     await message.channel.send(`I added an approriate role for your rank.`)

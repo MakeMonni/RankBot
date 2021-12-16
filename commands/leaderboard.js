@@ -58,7 +58,7 @@ class Leaderboard extends Command {
                             let player = await client.db.collection("discordRankBotUsers").find({ scId: scores[i].player }).toArray();
                             if (player.length === 0) {
                                 player = await client.scoresaber.getUser(scores[i].player);
-                                playerName = player.playerInfo.playerName;
+                                playerName = player.name;
                             }
                             else {
                                 playerName = player[0].discName;
@@ -119,7 +119,7 @@ class Leaderboard extends Command {
                             let player = await client.db.collection("discordRankBotUsers").find({ scId: scores[i].player }).toArray();
                             if (player.length === 0) {
                                 player = await client.scoresaber.getUser(scores[i].player);
-                                playerName = player.playerInfo.playerName;
+                                playerName = player.name;
                             }
                             else {
                                 playerName = player[0].discName;

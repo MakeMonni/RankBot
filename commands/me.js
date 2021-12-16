@@ -10,16 +10,13 @@ class Me extends Command {
                 message.channel.send(`I'm sorry I could not find you in the database.\nTry using ${client.config.prefix}addme <scoresaberid> to get added into this awesome system.`);
             } else {
                 let user = await client.scoresaber.getUser(dbres[0].scId);
-
                 if (user) {
-                    console.log(`${user.playerInfo.playerName} r:${user.playerInfo.countryRank}`);
-
                     const embed = new Discord.MessageEmbed()
                         .setColor('#513dff')
-                        .setThumbnail(`https://new.scoresaber.com${user.playerInfo.avatar}`)
-                        .addField('Profile', `[__${user.playerInfo.playerName}__](https://scoresaber.com/u/${dbres[0].scId})`)
-                        .addField("Ranks", `:globe_with_meridians: #${user.playerInfo.rank} \u200b \u200b \u200b :flag_${(user.playerInfo.country).toLowerCase()}: #${user.playerInfo.countryRank}`)
-                        .addField(`Stats`, `${new Intl.NumberFormat('fi-FI').format(user.playerInfo.pp)}pp \u200b Acc: ${Math.round(user.scoreStats.averageRankedAccuracy * 100) / 100}%`)
+                        .setThumbnail(user.profilePicture)
+                        .addField('Profile', `[__${user.name}__](https://scoresaber.com/u/${dbres[0].scId})`)
+                        .addField("Ranks", `:globe_with_meridians: #${user.rank} \u200b \u200b \u200b :flag_${(user.country).toLowerCase()}: #${user.countryRank}`)
+                        .addField(`Stats`, `${new Intl.NumberFormat('fi-FI').format(user.pp)}pp \u200b Acc: ${Math.round(user.scoreStats.averageRankedAccuracy * 100) / 100}%`)
                         .addFields({ name: `Playcount`, value: `Total: ${user.scoreStats.totalPlayCount}`, inline: true }, { name: `\u200b`, value: `Ranked: ${user.scoreStats.rankedPlayCount}`, inline: true })
                         .setTimestamp()
                         .setFooter(`Remember to hydrate`);

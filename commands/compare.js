@@ -3,6 +3,8 @@ const Discord = require("discord.js");
 
 class Compare extends Command {
     async run(client, message, args) {
+        await message.channel.send("It borked, waiting to be fixed.")
+        return;
         try {
             let usersToCheck = [];
             let users = [];
@@ -11,11 +13,13 @@ class Compare extends Command {
                 return;
             }
 
-            const dbres = await client.db.collection("discordRankBotUsers").find({ discId: message.author.id }).toArray();
+            const dbres = await client.db.collection("discordRankBotUsers").findOne({ discId: message.author.id });
 
-            if (dbres.length !== 0) {
-                usersToCheck.push(dbres[0].scId);
+            if (dbres) {
+                usersToCheck.push(dbres.scId);
                 let user = await client.misc.getUserFromMention(args[0]);
+
+                console.log(user);
 
                 let usersFlipped = false;
                 let foundComparableUser = false;
@@ -27,7 +31,8 @@ class Compare extends Command {
                         usersToCheck.push(mentioneddbres[0].scId);
                         foundComparableUser = true;
                     }
-                } else if (!args[0].includes("<")) {
+                }
+                else if (!user) {
                     let scuser = await client.scoresaber.getUser(args[0]);
 
                     if (scuser.playerInfo) {
@@ -45,38 +50,38 @@ class Compare extends Command {
 
                 if (usersFlipped) users = users.reverse();
 
-                if (!foundComparableUser && !user.bot) {
+                if (!foundComparableUser) {
                     message.channel.send("The pinged user does not seem to be registered.")
                 }
-                else if (users[0] && users[1] && users[0].playerInfo.playerId === users[1].playerInfo.playerId) {
+                else if (users[0] && users[1] && users[0].id === users[1].id) {
                     message.channel.send("Stop trying to compare yourself to yourself...");
                 }
-                else if (users[0] && users[1] && users[0].playerInfo.playerId !== users[1].playerInfo.playerId) {
-                    console.log(`Comparing users: ${users[0].playerInfo.playerName} and ${users[1].playerInfo.playerName}.`)
+                else if (users[0] && users[1] && users[0].id !== users[1].id) {
+                    console.log(`Comparing users: ${users[0].name} and ${users[1].name}.`)
 
-                    let ppDifference = ((users[0].playerInfo.pp) - (users[1].playerInfo.pp)).toFixed(2);
-                    let ppBiggerOrSmaller = BiggerOrSmaller(users[0].playerInfo.pp, users[1].playerInfo.pp);
+                    let ppDifference = ((users[0].pp) - (users[1].pp)).toFixed(2);
+                    let ppBiggerOrSmaller = BiggerOrSmaller(users[0].pp, users[1].pp);
 
                     let accDifference = ((users[0].scoreStats.averageRankedAccuracy) - (users[1].scoreStats.averageRankedAccuracy)).toFixed(2);
                     let accBiggerOrSmaller = BiggerOrSmaller(users[0].scoreStats.averageRankedAccuracy, users[1].scoreStats.averageRankedAccuracy);
 
-                    let rankDifference = ((users[0].playerInfo.rank) - (users[1].playerInfo.rank));
-                    let rankBiggerOrSmaller = BiggerOrSmaller(users[0].playerInfo.rank, users[1].playerInfo.rank);
+                    let rankDifference = ((users[0].rank) - (users[1].rank));
+                    let rankBiggerOrSmaller = BiggerOrSmaller(users[0].rank, users[1].rank);
 
                     const embed = new Discord.MessageEmbed()
-                        .setAuthor(`Comparing`, `https://new.scoresaber.com${users[0].playerInfo.avatar}`, ``)
-                        .setThumbnail(`https://new.scoresaber.com${users[1].playerInfo.avatar}`)
+                        .setAuthor(`Comparing`, users[0].profilePicture, ``)
+                        .setThumbnail(users[1].profilePicture)
                         .setColor('#513dff')
-                        .addField(`Users`, `[${users[0].playerInfo.playerName}](https://new.scoresaber.com/u/${usersToCheck[0]} 'Scoresaber - ${users[0].playerInfo.playerName}') - [${users[1].playerInfo.playerName}](https://new.scoresaber.com/u/${users[1].playerInfo.playerId} 'Scoresaber - ${users[1].playerInfo.playerName}')`)
+                        .addField(`Users`, `[${users[0].name}](https://new.scoresaber.com/u/${usersToCheck[0]} 'Scoresaber - ${users[0].name}') - [${users[1].name}](https://new.scoresaber.com/u/${users[1].id} 'Scoresaber - ${users[1].name}')`)
                         .addFields({
                             name: `PP`,
-                            value: `${Math.round((users[0].playerInfo.pp) * 100) / 100} ${ppBiggerOrSmaller} ${Math.round((users[1].playerInfo.pp) * 100) / 100} \n${Emote(users[0].playerInfo.pp, users[1].playerInfo.pp, message)}  **${Math.round((ppDifference) * 100) / 100}pp**`
+                            value: `${Math.round((users[0].pp) * 100) / 100} ${ppBiggerOrSmaller} ${Math.round((users[1].pp) * 100) / 100} \n${Emote(users[0].pp, users[1].pp, message)}  **${Math.round((ppDifference) * 100) / 100}pp**`
                         }, {
                             name: `Acc`,
                             value: `${Math.round((users[0].scoreStats.averageRankedAccuracy) * 100) / 100}% ${accBiggerOrSmaller} ${Math.round((users[1].scoreStats.averageRankedAccuracy) * 100) / 100}% \n${Emote(users[0].scoreStats.averageRankedAccuracy, users[1].scoreStats.averageRankedAccuracy, message)}  **${Math.round((accDifference) * 100) / 100}%**`
                         }, {
                             name: `Rank`,
-                            value: `${users[0].playerInfo.rank} ${rankBiggerOrSmaller} ${users[1].playerInfo.rank} \n${Emote(users[1].playerInfo.rank, users[0].playerInfo.rank, message)} **${rankDifference * -1}**`
+                            value: `${users[0].rank} ${rankBiggerOrSmaller} ${users[1].rank} \n${Emote(users[1].rank, users[0].rank, message)} **${rankDifference * -1}**`
                         })
                         .setTimestamp()
                         .setFooter(`Remember to hydrate`);

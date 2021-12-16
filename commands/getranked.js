@@ -5,72 +5,37 @@ const fetch = require('node-fetch');
 class GetRanked extends Command {
     async run(client, message, args) {
         if (client.checkIfOwner(message)) {
-            console.log(`Requesting ranked maps.`)
+            console.log(`Requesting ranked maps.`);
+            const newMaps = await client.db.collection("scoresaberRankedMaps").find().toArray();
 
-            let maps = await fetch(`https://scoresaber.com/api.php?function=get-leaderboards&page=1&limit=${args[0]}&ranked={ranked_only}`)
-                .then(res => res.json())
-                .catch(err => { console.log(`${err}`) })
-
-            console.log(`Found: ${maps.songs.length} maps.`);
-
-            let insertedMaps = 0;
-            let existedMaps = 0;
-
-            let scoresToPpCheck = [];
-            let newMaps = [];
-
-            for (let i = 0; i < maps.songs.length; i++) {
-                let map = maps.songs[i];
-                const query = { hash: map.id.toUpperCase(), diff: map.diff };
-                const dbres = await client.db.collection("scoresaberRankedMaps").find(query).toArray();
-
-                if (!dbres[0]) {
-                    let rankedStatus = false;
-                    if (map.ranked === 1) rankedStatus = true;
-                    let object = {
-                        hash: map.id.toUpperCase(),
-                        name: map.name,
-                        songAuthor: map.songAuthorName,
-                        mapper: map.levelAuthorName,
-                        bpm: map.bpm,
-                        diff: map.diff,
-                        stars: map.stars,
-                        isRanked: rankedStatus
-                    };
-                    client.db.collection("scoresaberRankedMaps").insertOne(object, async function (err) {
-                        if (err) throw err;
-
-                        if (args[1] !== "nopost") {
-                            const qualifiedPlays = await client.db.collection("discordRankBotScores").find({ hash: object.hash, diff: map.diff, pp: 0 }).toArray();
-
-                            for (let i = 0; i < qualifiedPlays.length; i++) {
-                                let play = { player: qualifiedPlays[i].player, leaderboardId: qualifiedPlays[i].leaderboardId }
-                                scoresToPpCheck.push(play);
-                            }
-                        }
-
-                        await client.db.collection("discordRankBotScores").updateMany({ hash: object.hash }, { $set: { ranked: true } });
-
-                        newMaps.push(map);
-                        insertedMaps++;
-                    })
-                }
-                else existedMaps++;
+            if (!newMaps) {
+                await message.channel.send("No new maps.");
+                return;
             }
-            await message.channel.send(`New maps: ${insertedMaps}\nMaps already in db: ${existedMaps} \nFrom a total of ${maps.songs.length} maps.`)
-            console.log(`New maps: ${insertedMaps}, Maps already in db: ${existedMaps}.`)
+            let scoresToPpCheck = [];
 
-            let addedIDs = [];
+            for (let i = 0; i < newMaps.length; i++) {
+                const qualifiedPlays = await client.db.collection("discordRankBotScores").find({ hash: newMaps[i].hash, diff: newMaps[i].diff, pp: 0 }).toArray();
 
-            if (args[1] === "nopost") return
+                for (let i = 0; i < qualifiedPlays.length; i++) {
+                    let play = { playerId: qualifiedPlays[i].player, leaderboardId: qualifiedPlays[i].leaderboardId, playerName: "" }
+                    scoresToPpCheck.push(play);
+                }
+            }
+
+            await message.channel.send(`New maps: ${newMaps.length}.`)
+
+            let addedHashes = [];
+            1
+            if (args[0] === "nopost") return
             else {
                 for (let i = 0; i < newMaps.length; i++) {
                     let map = []
-                    if (!addedIDs.includes(newMaps[i].id)) {
+                    if (!addedHashes.includes(newMaps[i].hash)) {
                         for (let j = 0; j < newMaps.length; j++) {
-                            if (newMaps[i].id === newMaps[j].id) {
+                            if (newMaps[i].hash === newMaps[j].hash) {
                                 map.push(newMaps[j])
-                                addedIDs.push(newMaps[i].id);
+                                addedHashes.push(newMaps[i].hash);
                             }
                         }
 
@@ -78,18 +43,20 @@ class GetRanked extends Command {
                             return b.stars - a.stars;
                         });
 
-                        let mapData = await client.beatsaver.findMapByHash(map[0].id);
+                        let mapData = await client.beatsaver.findMapByHash(map[0].hash);
 
-                        const versionIndex = mapData.versions.findIndex(versions => versions.hash === map[0].id)
+                        const versionIndex = mapData.versions.findIndex(versions => versions.hash === map[0].hash)
 
                         const minutes = Math.floor(mapData.metadata.duration / 60);
                         const seconds = (mapData.metadata.duration - minutes * 60).toString().padStart(2, "0");
 
+                        if (!map[0].mapper) map[0].mapper = "unknown mapper";
+
                         const embed = new Discord.MessageEmbed()
-                            .setAuthor(`${map[0].name} ${map[0].songSubName} - ${map[0].songAuthorName}`, `https://new.scoresaber.com/apple-touch-icon.46c6173b.png`, `https://scoresaber.com/leaderboard/${map[0].uid}`)
-                            .setThumbnail(`https://scoresaber.com${map[0].image}`)
-                            .addField(`Mapper`, `${map[0].levelAuthorName}`)
-                            .addFields({ name: `BPM`, value: `${map[0].bpm}`, inline: true }, { name: `Length`, value: `${minutes}:${seconds}`, inline: true })
+                            .setAuthor(`${map[0].name} ${map[0].subName} - ${map[0].songAuthor}`, `https://new.scoresaber.com/apple-touch-icon.46c6173b.png`, `https://scoresaber.com/leaderboard/${map[0].uid}`)
+                            .setThumbnail(`${mapData.versions[0].coverURL}`)
+                            .addField(`Mapper`, `${map[0].mapper}`)
+                            .addFields({ name: `BPM`, value: `${mapData.metadata.bpm}`, inline: true }, { name: `Length`, value: `${minutes}:${seconds}`, inline: true })
                             .setTimestamp()
                             .setFooter(`Remember to hydrate`);
 
@@ -104,37 +71,17 @@ class GetRanked extends Command {
                     }
                 }
             }
-            //Do pp find here from scoresToPpCheck
+
             let uniquePlayer = []
-            // #1. Get list of players with scores
             for (let i = 0; i < scoresToPpCheck.length; i++) {
-                if (!(uniquePlayer.includes(scoresToPpCheck[i].player))) uniquePlayer.push(scoresToPpCheck[i].player)
+                if (!(uniquePlayer.includes(scoresToPpCheck[i].playerId))) uniquePlayer.push(scoresToPpCheck[i].playerId)
             }
-
-            let scoresToPpCheckWithIndex = [];
-
-            // #2. Get recent from players with scores
             for (let i = 0; i < uniquePlayer.length; i++) {
-                let thisPlayerScores = [];
-
-                for (let j = 0; j < scoresToPpCheck.length; j++) {
-                    if (uniquePlayer[i] === scoresToPpCheck[j].player) thisPlayerScores.push(scoresToPpCheck[j])
+                const user = await client.scoresaber.getUser(uniquePlayer[i]);
+                const scoresByUser = scoresToPpCheck.filter(e => e.playerId === uniquePlayer[i])
+                for (let j = 0; j < scoresByUser.length; j++) {
+                    await client.scoresaber.getUserScoreOnLeaderboard(scoresByUser[j].playerId, user.name, scoresByUser[j].leaderboardId)
                 }
-
-                await client.scoresaber.getRecentScores(uniquePlayer[i]);
-                let scores = await client.db.collection("discordRankBotScores").find({ player: uniquePlayer[i] }).sort({ date: -1 }).toArray();
-
-                // #3. Find player plays and go trough to find index
-                for (let j = 0; j < thisPlayerScores.length; j++) {
-                    thisPlayerScores[j].index = scores.findIndex(map => map.leaderboardId === thisPlayerScores[j].leaderboardId);
-                    scoresToPpCheckWithIndex.push(thisPlayerScores[j])
-                }
-            }
-
-            for (let i = 0; i < scoresToPpCheck.length; i++) {
-                scoresToPpCheck[i].page = Math.floor((scoresToPpCheck[i].index / 8) + 1)
-
-                await client.scoresaber.getOnePageRecent(scoresToPpCheck[i].player, scoresToPpCheck[i].leaderboardId, scoresToPpCheck[i].page)
             }
         }
     }
