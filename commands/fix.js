@@ -1,19 +1,33 @@
 const Command = require("../core/command/command.js");
+const Discord = require("discord.js");
 
 class Fix extends Command {
     async run(client, message, args) {
         if (client.checkIfOwner(message)) {
-            let scores = await client.db.collection("discordRankBotScores").find().toArray();
-            let lowerCaseHashes = 0;
-            console.log("Scores to check: " + scores.length);
-            for (let i = 0; i < scores.length; i++) {
-                if (scores[i].hash.match(/^[a-z0-9]+$/)) {
-                    scores[i].hash = scores[i].hash.toUpperCase();
-                    lowerCaseHashes++;
-                    await client.db.collection("discordRankBotScores").updateOne({ _id: scores[i]._id }, { $set: scores[i] })
+            let removedScores = 0;
+            let result = await client.db.collection("discordRankBotScores").aggregate(
+                {
+                    $group: {
+                        _id: { player: "$player", leaderboardId: "$leaderboardId" },
+                        count: { $sum: 1 },
+                        docs: { $push: "$score" }
+                    }
+                },
+                {
+                    $match: {
+                        count: { $gt: 1 }
+                    }
+                }
+            ).toArray();
+            console.log(result.length);
+            for (let i = 0; i < result.length; i++) {
+                if (result[i].count >= 2) {
+                    result[i].docs.sort((a, b) => b - a);
+                    await client.db.collection("discordRankBotScores").deleteMany({ player: result[i]._id.player, leaderboardId: result[i]._id.leaderboardId, score: {$lt: result[i].docs[0]}});
+                    removedScores++
                 }
             }
-            await message.channel.send(`Fixed ${lowerCaseHashes} lowercase hashes.`)
+            await message.channel.send(`Removed ${removedScores} old scores.`)
         }
     }
 }
