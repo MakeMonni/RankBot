@@ -169,7 +169,7 @@ class ScoreSaberUtils {
             play["beatsavior"] = beatSaviorData;
         }
 
-        await this.db.collection("discordRankBotScores").updateOne({ hash: playData.songHash, player: scoreSaberID, diff: playData.difficultyRaw }, { $set: play }, { upsert: true })
+        await this.db.collection("discordRankBotScores").updateOne({ hash: play.hash, player: play.player , diff: play.diff }, { $set: play }, { upsert: true })
     }
 
     //Updated but untested as it's not in use
