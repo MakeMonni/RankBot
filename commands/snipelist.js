@@ -32,9 +32,9 @@ class Snipelist extends Command {
             }
             else if (isFinite(args[0])) {
                 targetUser = await client.scoresaber.getUser(args[0]);
-                if (targetUser?.playerInfo?.playerId) {
-                    targetUserScId = targetUser.playerInfo.playerId;
-                    userName = targetUser.playerInfo.playerName;
+                if (targetUser?.name) {
+                    targetUserScId = targetUser.id;
+                    userName = targetUser.name;
                 }
                 else {
                     await message.channel.send(`Not a valid scoresaber user.\nMake sure the user exists at <https://scoresaber.com/u/${args[0]}>`);
