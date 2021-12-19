@@ -19,7 +19,6 @@ class Fix extends Command {
                     }
                 }
             ).toArray();
-            console.log(result.length);
             for (let i = 0; i < result.length; i++) {
                 if (result[i].count >= 2) {
                     result[i].docs.sort((a, b) => b - a);
