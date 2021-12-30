@@ -64,23 +64,22 @@ class Snipelist extends Command {
                 await client.scoresaber.getRecentScores(targetUserScId);
             }
 
-            let targetScores;
             let snipeScoreHashes = [];
             let unplayedScoreHashes = [];
-            let userScores = [];
+            let targetQuery = { player: targetUserScId };
+            let userQuery = { player: user.scId };
 
             if (args[1] === "ranked") {
-                targetScores = await client.db.collection("discordRankBotScores").find({ player: targetUserScId, ranked: true }).toArray();
-                userScores = await client.db.collection("discordRankBotScores").find({ player: user.scId, ranked: true }).toArray();
+                targetQuery.ranked = true;
+                userQuery.ranked = true;
             }
             else if (args[1] === "unranked") {
-                targetScores = await client.db.collection("discordRankBotScores").find({ player: targetUserScId, ranked: false }).toArray();
-                userScores = await client.db.collection("discordRankBotScores").find({ player: user.scId, ranked: false }).toArray();
+                targetQuery.ranked = false;
+                userQuery.ranked = false;
             }
-            else {
-                targetScores = await client.db.collection("discordRankBotScores").find({ player: targetUserScId }).toArray();
-                userScores = await client.db.collection("discordRankBotScores").find({ player: user.scId }).toArray();
-            }
+
+            const targetScores = await client.db.collection("discordRankBotScores").find(targetQuery).toArray();
+            const userScores = await client.db.collection("discordRankBotScores").find(userQuery).toArray();
 
             for (let i = 0; i < targetScores.length; i++) {
                 const scoreIndex = userScores.findIndex(e => e.leaderboardId === targetScores[i].leaderboardId);
