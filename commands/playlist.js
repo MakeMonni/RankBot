@@ -13,8 +13,8 @@ class Playlist extends Command {
 
         else if (args[0] === "random") {
             if (Number.isInteger(args[1]) || args[1] > 0) {
-                if (args[1] > 1000) {
-                    await message.channel.send("Sorry, max amount 1000");
+                if (args[1] > 10000) {
+                    await message.channel.send("Sorry, max amount 10000");
                     return;
                 }
                 let amount = parseInt(args[1]);
