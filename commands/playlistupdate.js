@@ -21,6 +21,8 @@ class PlaylistUpdate extends Command {
             let mapsUpdated = 0;
             let errored = 0
 
+            // Add check for duplicate maps here.
+
             try {
                 for (let i = 0; i < data.songs.length; i++) {
                     let mapHash = data.songs[i].hash;

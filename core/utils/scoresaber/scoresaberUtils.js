@@ -145,7 +145,7 @@ class ScoreSaberUtils {
     }
 
     //Updated to new API
-    async addPlayToDb(playData, scoreSaberID, beatSaviorData) {
+    async addPlayToDb(playData, user, beatSaviorData) {
         const isRanked = (playData.score.pp > 0)
 
         let play = {
@@ -153,7 +153,8 @@ class ScoreSaberUtils {
             score: playData.score.baseScore,
             hash: playData.leaderboard.songHash.toUpperCase(),
             maxscore: 0,
-            player: scoreSaberID,
+            player: user.id,
+            country: user.country,
             diff: playData.leaderboard.difficulty.difficultyRaw,
             diffInt: playData.leaderboard.difficulty.difficulty,
             date: new Date(playData.score.timeSet).getTime(),
@@ -169,10 +170,12 @@ class ScoreSaberUtils {
             play["beatsavior"] = beatSaviorData;
         }
 
-        await this.db.collection("discordRankBotScores").updateOne({ hash: play.hash, player: play.player , diff: play.diff }, { $set: play }, { upsert: true })
+        await this.db.collection("discordRankBotScores").updateOne({ hash: play.hash, player: play.player, diff: play.diff }, { $set: play }, { upsert: true })
     }
 
-    //Updated but untested as it's not in use
+    // Updated but untested as it's not in use
+    // Commented out to not clarify it's not in use
+    /*
     async getTopScores(scoreSaberId) {
         let reachedEndOfRanked = false;
         let pageOfScoreSaber = 1;
@@ -197,6 +200,7 @@ class ScoreSaberUtils {
         }
         console.log(`Reached end of ranked for ${scoreSaberId} `);
     }
+    */
 
     //Updated to new API
     async getRecentScores(scoreSaberID) {
@@ -206,6 +210,8 @@ class ScoreSaberUtils {
         const dbresLatestScore = await this.db.collection("discordRankBotScores").find({ player: scoreSaberID }).sort({ date: -1 }).limit(1).toArray();
         let beatSaviorScores = [];
         let beatSaviorChecked = false;
+        let userChecked = false;
+        let user = { id: scoreSaberID, country: "" };
 
         while (!foundSeenPlay) {
             let executions = 0;
@@ -224,22 +230,33 @@ class ScoreSaberUtils {
                             break;
                         }
                         else {
+                            if (!userChecked) {
+                                const dbUser = await this.client.db.collection("discordRankBotUsers").findOne({ scId: scoreSaberID });
+                                if (dbUser) {
+                                    user.country = dbUser.country;
+                                }
+                                else {
+                                    const tmpUser = await this.getUser(scoreSaberID);
+                                    user.country = tmpUser.country;
+                                }
+                                userChecked = true;
+                            }
                             if (!beatSaviorChecked) {
                                 beatSaviorScores = await this.client.beatsavior.getRecentPlays(scoreSaberID);
                                 if (beatSaviorScores) beatSaviorScores.reverse();
                                 beatSaviorChecked = true;
                             }
                             if (beatSaviorScores == null) {
-                                await this.addPlayToDb(response.playerScores[i], scoreSaberID);
+                                await this.addPlayToDb(response.playerScores[i], user);
                             }
                             else {
                                 for (let j = 0; j < beatSaviorScores.length; j++) {
                                     if (beatSaviorScores[j].trackers.scoreTracker.rawScore === response.playerScores[i].score.baseScore && response.playerScores[i].leaderboard.songHash === beatSaviorScores[j].songID) {
-                                        await this.addPlayToDb(response.playerScores[i], scoreSaberID, beatSaviorScores[j]);
+                                        await this.addPlayToDb(response.playerScores[i], user, beatSaviorScores[j]);
                                         break;
                                     }
                                     if (j === beatSaviorScores.length - 1) {
-                                        await this.addPlayToDb(response.playerScores[i], scoreSaberID);
+                                        await this.addPlayToDb(response.playerScores[i], user);
                                     }
                                 }
                             }
@@ -288,6 +305,8 @@ class ScoreSaberUtils {
         let pageOfScoreSaber = 1;
         let reachedLastPage = false;
         let totalScores = 0;
+        let userChecked = false;
+        let user = { id: scoreSaberID, country: "" };
 
         while (!reachedLastPage) {
             let executions = 0;
@@ -299,14 +318,25 @@ class ScoreSaberUtils {
 
                 if (executions === 3) console.log(`Failed multiple times to get scores from ${scoreSaberID} page: ${pageOfScoreSaber}.`)
                 else {
+                    if (!userChecked) {
+                        const dbUser = await this.client.db.collection("discordRankBotUsers").findOne({ scId: scoreSaberID });
+                        if (dbUser) {
+                            user.country = dbUser.country;
+                        }
+                        else {
+                            const tmpUser = await this.getUser(scoreSaberID);
+                            user.country = tmpUser.country;
+                        }
+                        userChecked = true;
+                    }
                     for (let i = 0; i < res.playerScores.length; i++) {
                         totalScores++;
-                        await this.addPlayToDb(res.playerScores[i], scoreSaberID);
+                        await this.addPlayToDb(res.playerScores[i], user);
                     }
                     if (res?.playerScores?.length === 100) pageOfScoreSaber++;
                     else reachedLastPage = true
                 }
-               
+
             });
         }
         console.log(`Reached last page of scores for ${scoreSaberID}. Total scores: ${totalScores} on a total of ${pageOfScoreSaber} pages.`);
