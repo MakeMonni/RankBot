@@ -22,7 +22,7 @@ class Me extends Command {
                 if (await client.db.collection("discordRankBotScores").find({ player: user.id }).count() > 0) {
                     const result = await client.db.collection("discordRankBotScores").aggregate([
                         { $match: { ranked: true, country: user.country } },
-                        { $sort: { score: -1 } },
+                        { $sort: { score: -1, date: 1 } },
                         {
                             $group: {
                                 _id: { leaderboardId: "$leaderboardId" },
@@ -43,7 +43,7 @@ class Me extends Command {
 
                     const minRank = Math.min.apply(Math, pos.map(function (e) { return e }))
                     const minCount = count(pos, minRank);
-                    
+
                     const secondMin = Math.min.apply(null, pos.filter(n => n != minRank));
                     const secondMinCount = count(pos, secondMin);
 
