@@ -107,7 +107,7 @@ class Gains extends Command {
                 const ppGained = Math.round((scProfile.pp - user.pp) * 100) / 100;
                 const rankChange = user.rank - scProfile.rank;
                 const countryRankChange = user.countryRank - scProfile.countryRank;
-                const lengthString = new Date(totalLength * 1000).toISOString().substr(11, 8);
+                const lengthString = new Date(totalLength * 1000).toISOString().substr(11, 8); //Fix?
                 const averageNPS = Math.round(totalNotes / totalLength * 100) / 100;
                 const averageAccuracyMaps = Math.round(totalAcc / (newScores.length - erroredMaps) * 10000) / 100 + "%";
                 const averageAccuracyLeft = Math.round(totalLeftAcc / countOfBeatsavior * 100) / 100;

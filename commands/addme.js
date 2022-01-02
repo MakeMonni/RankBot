@@ -7,7 +7,6 @@ class Addme extends Command {
         } else if (args) {
             let id = args[0].replace(/\D/g, '');
             let user = await client.scoresaber.getUser(id);
-            console.log(user);
 
             if (!user) {
                 await message.channel.send("Something went terribly wrong, check your scoresaber id and try again.")
@@ -45,9 +44,8 @@ class Addme extends Command {
                                     .catch(console.log())
                                 message.channel.send(`You have been added and your role will be set with the next update, or if you are impatient you can run ${client.config.prefix}roleme.`);
                             }
-                            else
-                            {
-                                await message.channel.send("This should not happen :^) <@146668467649642496>");
+                            else {
+                                await message.channel.send(`Added you as ${user.name}\n<https://scoresaber.com/u/${user.id}>`);
                             }
                         } else {
                             if (message.member.roles.cache.some(role => role.name === 'landed')) {
