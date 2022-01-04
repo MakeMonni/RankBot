@@ -346,7 +346,7 @@ class ScoreSaberUtils {
         const currentMaps = await this.client.db.collection("scoresaberRankedMaps").find().toArray();
         let newMaps = [];
         const ignoredMaps = this.config.deletedRankedMaps;
-        let page = 1;
+        let page = 0;
         let foundSeenMap = false;
 
         while (!foundSeenMap) {
@@ -366,6 +366,7 @@ class ScoreSaberUtils {
                     for (let i = 0; i < res.leaderboards.length; i++) {
                         if (currentMaps.some(e => e.hash === res.leaderboards[i].songHash.toUpperCase() && e.diff === res.leaderboards[i].difficulty.difficultyRaw)) {
                             console.log("Found a seen map.");
+                            console.log(res.leaderboards[i].songName, res.leaderboards[i].levelAuthorName);
                             foundSeenMap = true;
                             break;
                         }
