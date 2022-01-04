@@ -8,6 +8,9 @@ class GetRanked extends Command {
             console.log(`Requesting ranked maps.`);
             const newMaps = await client.scoresaber.returnRankedMaps();
 
+            //Use this to test
+            //const newMaps = await client.db.collection("scoresaberRankedMaps").find().toArray();
+            
             if (!newMaps) {
                 await message.channel.send("No new maps.");
                 return;
@@ -52,8 +55,10 @@ class GetRanked extends Command {
 
                         if (!map[0].mapper) map[0].mapper = "unknown mapper";
 
+                        console.log(map)
+
                         const embed = new Discord.MessageEmbed()
-                            .setAuthor(`${map[0].name} ${map[0].subName} - ${map[0].songAuthor}`, `https://new.scoresaber.com/apple-touch-icon.46c6173b.png`, `https://scoresaber.com/leaderboard/${map[0].uid}`)
+                            .setAuthor(`${map[0].name} ${map[0].subName} - ${map[0].songAuthor}`, `https://new.scoresaber.com/apple-touch-icon.46c6173b.png`, `https://scoresaber.com/leaderboard/${map[0].id}`)
                             .setThumbnail(`${mapData.versions[0].coverURL}`)
                             .addField(`Mapper`, `${map[0].mapper}`)
                             .addFields({ name: `BPM`, value: `${mapData.metadata.bpm}`, inline: true }, { name: `Length`, value: `${minutes}:${seconds}`, inline: true })
