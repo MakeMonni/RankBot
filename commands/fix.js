@@ -41,11 +41,39 @@ class Fix extends Command {
                 }
                 await botMessage.edit(`Updated ${scoresUpdated} to include country tag.`);
             }
-            else {
+            if (args[0] === "unrank/rank") {
                 const response = await client.db.collection("discordRankBotScores").updateMany({ pp: { $gt: 0 }, ranked: false }, { $set: { ranked: true } });
                 const response2 = await client.db.collection("discordRankBotScores").updateMany({ pp: 0 }, { $set: { ranked: false } });
                 await message.channel.send(`Updated ${response.modifiedCount} maps to include ranked true`);
                 await message.channel.send(`Removed ranked status from ${response2.modifiedCount}.`)
+            }
+            else {
+                console.time("ppcheck")
+                let scoresToRecheck = [];
+                let userIdName = [];
+                const rankedMaps = await client.db.collection("scoresaberRankedMaps").find().toArray();
+                for (let i = 0; i < rankedMaps.length; i++) {
+                    const scoresWithoutPp = await client.db.collection("discordRankBotScores").find({ pp: 0, leaderboardId: rankedMaps[i].id }).toArray();
+                    for (let j = 0; j < scoresWithoutPp.length; j++) {
+                        const user = userIdName.find(player => player.id === scoresWithoutPp[j].player);
+                        let userName;
+                        if (!user) {
+                            console.log("new user");
+                            const scUser = await client.scoresaber.getUser(scoresWithoutPp[j].player);
+                            userIdName.push({ id: scoresWithoutPp[j].player, name: scUser.name });
+                            userName = scUser.name;
+                        }
+                        else {
+                            userName = user.name
+                        }
+                        scoresToRecheck.push({ playerId: scoresWithoutPp[j].player, leaderboardId: scoresWithoutPp[j].leaderboardId, name: userName })
+                    }
+                }
+                for (let i = 0; i < scoresToRecheck.length; i++) {
+                    await client.scoresaber.getUserScoreOnLeaderboard(scoresToRecheck[i].playerId, scoresToRecheck[i].name, scoresToRecheck[i].leaderboardId)
+                }
+                console.timeEnd("ppcheck")
+                await message.channel.send(`Recheck ${scoresToRecheck.length} scores for a pp value`);
             }
         }
     }
