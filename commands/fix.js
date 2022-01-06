@@ -43,7 +43,9 @@ class Fix extends Command {
             }
             else {
                 const response = await client.db.collection("discordRankBotScores").updateMany({ pp: { $gt: 0 }, ranked: false }, { $set: { ranked: true } });
+                const response2 = await client.db.collection("discordRankBotScores").updateMany({ pp: 0 }, { $set: { ranked: false } });
                 await message.channel.send(`Updated ${response.modifiedCount} maps to include ranked true`);
+                await message.channel.send(`Removed ranked status from ${response2.modifiedCount}.`)
             }
         }
     }
