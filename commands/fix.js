@@ -30,16 +30,20 @@ class Fix extends Command {
                 await message.channel.send(`Removed ${removedScores} old scores.`);
                 return;
             }
-            else {
+            if (args[0] === "addcountrytoscores") {
                 const botMessage = await message.channel.send("...")
                 const users = await client.db.collection("discordRankBotScores").distinct("player");
                 let scoresUpdated = 0;
                 for (let i = 0; i < users.length; i++) {
                     const user = await client.scoresaber.getUser(users[i]);
-                    const response =  await client.db.collection("discordRankBotScores").updateMany({ player: users[i] }, { $set: { country: user.country } });
+                    const response = await client.db.collection("discordRankBotScores").updateMany({ player: users[i] }, { $set: { country: user.country } });
                     scoresUpdated += response.modifiedCount;
                 }
                 await botMessage.edit(`Updated ${scoresUpdated} to include country tag.`);
+            }
+            else {
+                const response = await client.db.collection("discordRankBotScores").updateMany({ pp: { $gt: 0 }, ranked: false }, { $set: { ranked: true } });
+                await message.channel.send(`Updated ${response.modifiedCount} maps to include ranked true`);
             }
         }
     }

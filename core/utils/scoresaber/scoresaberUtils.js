@@ -287,7 +287,7 @@ class ScoreSaberUtils {
                     const score = res.scores[i];
                     if (score.leaderboardPlayerInfo = scoreSaberID) {
                         console.log("Found score");
-                        await this.db.collection("discordRankBotScores").updateOne({ leaderboardId: leaderboardId, player: scoreSaberID }, { $set: { pp: score.pp } });
+                        await this.db.collection("discordRankBotScores").updateOne({ leaderboardId: leaderboardId, player: scoreSaberID }, { $set: { pp: score.pp , ranked: true} });
                         scoreFound = true;
                         break;
                     }
