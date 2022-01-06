@@ -31,11 +31,19 @@ class Me extends Command {
                         },
                     ]).toArray()
 
+                    let number1 = [];
                     let pos = [];
                     for (let i = 0; i < result.length; i++) {
                         const index = result[i].scores.findIndex(e => e.player === user.id)
-                        if (index !== -1) pos.push(index + 1);
+                        if (index !== -1) {
+                            pos.push(index + 1);
+                            if (index === 0) {
+                                number1.push(result[i]._id.leaderboardId)
+                            }
+                        }
                     }
+
+                    console.log("Rank1s", number1);
 
                     const count = (arr, val) => arr.reduce((a, v) => (v === val ? a + 1 : a), 0);
 
