@@ -1,6 +1,5 @@
 const Command = require("../core/command/command.js");
 const Discord = require('discord.js');
-const fetch = require('node-fetch');
 
 class GetRanked extends Command {
     async run(client, message, args) {
@@ -10,7 +9,7 @@ class GetRanked extends Command {
 
             //Use this to test
             //const newMaps = await client.db.collection("scoresaberRankedMaps").find().toArray();
-            
+
             if (!newMaps) {
                 await message.channel.send("No new maps.");
                 return;
