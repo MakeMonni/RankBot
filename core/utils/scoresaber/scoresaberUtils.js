@@ -370,7 +370,7 @@ class ScoreSaberUtils {
                         if (!currentMaps.some(e => e.hash === res.leaderboards[i].songHash.toUpperCase() && e.diff === res.leaderboards[i].difficulty.difficultyRaw)) {
                             const map = res.leaderboards[i]
 
-                            if (!ignoredMaps.includes(map.id)) {
+                            if (!ignoredMaps.includes(map.id) && !newMaps.includes(map.id)) {
                                 const mapObject = {
                                     id: map.id,
                                     hash: map.songHash.toUpperCase(),
