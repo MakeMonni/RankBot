@@ -287,7 +287,7 @@ class ScoreSaberUtils {
                     const score = res.scores[i];
                     if (score.leaderboardPlayerInfo = scoreSaberID) {
                         console.log("Found score");
-                        await this.db.collection("discordRankBotScores").updateOne({ leaderboardId: leaderboardId, player: scoreSaberID }, { $set: { pp: score.pp , ranked: true} });
+                        await this.db.collection("discordRankBotScores").updateOne({ leaderboardId: leaderboardId, player: scoreSaberID }, { $set: { pp: score.pp, ranked: true } });
                         scoreFound = true;
                         break;
                     }
@@ -344,8 +344,10 @@ class ScoreSaberUtils {
 
     async returnRankedMaps() {
         const currentMaps = await this.client.db.collection("scoresaberRankedMaps").find().toArray();
+        console.log("Current maps:", currentMaps.length);
         let newMaps = [];
         const ignoredMaps = this.config.deletedRankedMaps;
+        let mapcounter = 0;
         let page = 0;
         let foundSeenMap = false;
 
@@ -353,7 +355,7 @@ class ScoreSaberUtils {
             let executions = 0;
             const maps = await limiter.schedule({ id: `Ranked maps page: ${page}` }, async () => {
                 executions++;
-                const res = await fetch(`https://scoresaber.com/api/leaderboards?ranked=true&category=1&sort=0&page=${page}&withMetadata=false`)
+                const res = await fetch(`https://scoresaber.com/api/leaderboards?ranked=true&category=1&sort=0&page=${page}&withMetadata=true`)
                     .then(res => res.json())
                     .catch(err => { throw new Error(err) });
 
@@ -364,37 +366,35 @@ class ScoreSaberUtils {
                         foundSeenMap = true;
                     }
                     for (let i = 0; i < res.leaderboards.length; i++) {
-                        if (currentMaps.some(e => e.hash === res.leaderboards[i].songHash.toUpperCase() && e.diff === res.leaderboards[i].difficulty.difficultyRaw)) {
-                            console.log("Found a seen map.");
-                            console.log(res.leaderboards[i].songName, res.leaderboards[i].levelAuthorName);
-                            foundSeenMap = true;
-                            break;
-                        }
-                        const map = res.leaderboards[i]
+                        mapcounter++;
+                        if (!currentMaps.some(e => e.hash === res.leaderboards[i].songHash.toUpperCase() && e.diff === res.leaderboards[i].difficulty.difficultyRaw)) {
+                            const map = res.leaderboards[i]
 
-                        if (!ignoredMaps.includes(map.id)) {
-                            const mapObject = {
-                                id: map.id,
-                                hash: map.songHash.toUpperCase(),
-                                name: map.songName,
-                                subName: map.songSubName,
-                                songAuthor: map.songAuthorName,
-                                mapper: map.levelAuthorName,
-                                diff: map.difficulty.difficultyRaw,
-                                difficultyIdentifier: map.difficulty.difficulty,
-                                stars: map.stars,
-                                ranked: map.ranked,
-                                createdDate: new Date(map.createdDate).getTime(),
-                                rankedDate: new Date(map.rankedDate).getTime()
-                            };
-                            newMaps.push(mapObject);
+                            if (!ignoredMaps.includes(map.id)) {
+                                const mapObject = {
+                                    id: map.id,
+                                    hash: map.songHash.toUpperCase(),
+                                    name: map.songName,
+                                    subName: map.songSubName,
+                                    songAuthor: map.songAuthorName,
+                                    mapper: map.levelAuthorName,
+                                    diff: map.difficulty.difficultyRaw,
+                                    difficultyIdentifier: map.difficulty.difficulty,
+                                    stars: map.stars,
+                                    ranked: map.ranked,
+                                    createdDate: new Date(map.createdDate).getTime(),
+                                    rankedDate: new Date(map.rankedDate).getTime()
+                                };
+                                newMaps.push(mapObject);
+                            }
+                            else console.warn("Ignored map detected.");
                         }
-                        else console.warn("Ignored map detected.")
                     }
                 }
             })
             page++;
         }
+        console.log("Maps in response:", mapcounter);
         if (newMaps.length > 0) {
             let response = await this.db.collection("scoresaberRankedMaps").insertMany(newMaps);
             console.log(`Inserted ${response.insertedCount} new maps.`)

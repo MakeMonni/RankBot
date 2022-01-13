@@ -28,7 +28,6 @@ class GetRanked extends Command {
             await message.channel.send(`New maps: ${newMaps.length}.`)
 
             let addedHashes = [];
-1
             if (args[0] === "nopost") return
             else {
                 for (let i = 0; i < newMaps.length; i++) {
