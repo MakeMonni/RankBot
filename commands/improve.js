@@ -22,7 +22,7 @@ class Test extends Command {
                 //Do comparison with full ranked list here compared to all ranked plays by player -> then playlist from != found
             }
             else {
-                if (args[0] === "<" || args[0] === ">") {
+                if (args[0] === "over" || args[0] === "under") {
                     if (isFinite(args[1]) && args[1] >= 0 && args[1] <= 100) {
                         await client.scoresaber.getRecentScores(user.scId);
                         for (let i = 0; i < scores.length; i++) {
@@ -91,7 +91,7 @@ class Test extends Command {
                 }
 
                 else {
-                    await message.channel.send("Invalid operator chosen, use \`<\` or \`>\`");
+                    await message.channel.send("Invalid operator chosen, use \`over\` or \`under\`");
                     return;
                 }
             }
@@ -103,11 +103,11 @@ class Test extends Command {
 module.exports = Test;
 
 function Comparer(operator, target, current) {
-    if (operator === "<") {
+    if (operator === "over") {
         if (target < current) return true;
         else return false
     }
-    else if (operator === ">")
+    else if (operator === "under")
         if (target > current) return true;
         else return false
 }
