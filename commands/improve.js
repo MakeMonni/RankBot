@@ -11,7 +11,6 @@ class Test extends Command {
         if (user !== null) {
             const botmsg = await message.channel.send("Gathering scores, one moment please :)")
 
-            //Add sorting here
             const scores = await client.db.collection("discordRankBotScores").find({ player: user.scId, ranked: true }).sort({ date: 1 }).toArray();
             if (scores.length === 0) {
                 await message.channel.send(`Try using the \`${client.config.prefix}gains\` command first`);

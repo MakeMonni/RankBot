@@ -370,7 +370,10 @@ class ScoreSaberUtils {
                         if (!currentMaps.some(e => e.hash === res.leaderboards[i].songHash.toUpperCase() && e.diff === res.leaderboards[i].difficulty.difficultyRaw)) {
                             const map = res.leaderboards[i]
 
-                            if (!ignoredMaps.includes(map.id) && !newMaps.includes(map.id)) {
+                            if (newMaps.some(e => e.id === map.id)) {
+                                console.log("Dupe map");
+                            }
+                            else if (!ignoredMaps.includes(map.id)) {
                                 const mapObject = {
                                     id: map.id,
                                     hash: map.songHash.toUpperCase(),
