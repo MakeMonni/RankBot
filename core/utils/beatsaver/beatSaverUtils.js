@@ -45,6 +45,9 @@ class BeatSaverUtils {
                             if (msgJSON["type"] === 'MAP_UPDATE') {
                                 await client.beatsaver.addMapToDb(msgJSON["msg"]);
                             }
+                            else if (msgJSON["type"] === 'MAP_DELETE') {
+                                await client.db.collection("beatSaverLocal").updateOne({ key: msgJSON["msg"].toUpperCase() }, { $set: { deleted: true } });
+                            }
                         }
                     }
                     catch (err) { console.log(err) }
