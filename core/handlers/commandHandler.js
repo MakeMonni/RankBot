@@ -14,7 +14,9 @@ class CommandHandler {
             }
 
             const args = message.content.slice(this.prefix.length).trim().split(' ');
-            const command = args.shift().toLowerCase();
+            let command = args.shift().toLowerCase();
+            console.log(command);
+            if(command === "losses") command = "gains"
 
             const cmd = this.commands.get(command);
             if (cmd != null) await cmd.run(this.client, message, args);
