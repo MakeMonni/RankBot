@@ -15,7 +15,6 @@ class CommandHandler {
 
             const args = message.content.slice(this.prefix.length).trim().split(' ');
             let command = args.shift().toLowerCase();
-            console.log(command);
             if(command === "losses") command = "gains"
 
             const cmd = this.commands.get(command);
