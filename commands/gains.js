@@ -13,7 +13,13 @@ class Gains extends Command {
             const gainedScoresFromUser = await client.db.collection("discordRankBotScores").find({ player: user.scId, gained: true }).count();
             if (gainedScoresFromUser > 0) {
                 const botMessage = await message.channel.send("...");
-                await client.scoresaber.getRecentScores(user.scId);
+                try {
+                    await client.scoresaber.getRecentScores(user.scId);
+                }
+                catch (err) {
+                    botMessage.edit("Failed to get scores....")
+                }
+
 
                 const newScores = await client.db.collection("discordRankBotScores").find({ player: user.scId, gained: false }).toArray();
 
