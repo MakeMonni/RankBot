@@ -31,7 +31,6 @@ class ScoreSaberUtils {
         this.client = client;
     }
 
-    //Updated to new API
     async getUser(scoreSaberID) {
         try {
             let executions = 0;
@@ -54,7 +53,6 @@ class ScoreSaberUtils {
         }
     }
 
-    //Updated to new API
     async updateRole(scoresaberId, discordUsername, discordId, nolog) {
         const scUser = await this.getUser(scoresaberId);
         const guild = await this.client.guilds.fetch(this.config.guildId);
@@ -112,7 +110,6 @@ class ScoreSaberUtils {
         }
     }
 
-    //Updated to new API
     async updateAllRoles() {
         try {
             console.time("RoleUpdates")
@@ -144,7 +141,6 @@ class ScoreSaberUtils {
         }
     }
 
-    //Updated to new API
     async addPlayToDb(playData, user, beatSaviorData) {
         const isRanked = (playData.score.pp > 0)
 
@@ -173,36 +169,6 @@ class ScoreSaberUtils {
         await this.db.collection("discordRankBotScores").updateOne({ hash: play.hash, player: play.player, diff: play.diff }, { $set: play }, { upsert: true })
     }
 
-    // Updated but untested as it's not in use
-    // Commented out to not clarify it's not in use
-    /*
-    async getTopScores(scoreSaberId) {
-        let reachedEndOfRanked = false;
-        let pageOfScoreSaber = 1;
-
-        while (!reachedEndOfRanked) {
-            let executions = 0;
-            const scores = await limiter.schedule({ id: `Top ${scoreSaberId} page:${pageOfScoreSaber}` }, async () => {
-                executions++;
-                const response = await fetch(`https://scoresaber.com/api/player/${scoreSaberId}/scores?limit=100&sort=top&page=${pageOfScoreSaber}`)
-                    .then(res => res.json())
-                    .catch(err => { throw new Error(err) });
-                if (executions > 3) console.log(`Failed multiple times to get scores from ${scoreSaberId} page: ${pageOfScoreSaber}.`)
-                else {
-                    for (let i = 0; i < response.playerScores?.length; i++) {
-                        if (response.playerScores[i].score.pp === 0) {
-                            reachedEndOfRanked = true;
-                        } else await this.addPlayToDb(response.playerScores[i], scoreSaberId);
-                    }
-                }
-                pageOfScoreSaber++;
-            })
-        }
-        console.log(`Reached end of ranked for ${scoreSaberId} `);
-    }
-    */
-
-    //Updated to new API
     async getRecentScores(scoreSaberID) {
         let foundSeenPlay = false;
         let pageOfScoreSaber = 1;
@@ -221,7 +187,7 @@ class ScoreSaberUtils {
                     .then(res => res.json())
                     .catch(err => { throw new Error(err) });
                 if (executions > 3) {
-                    console.log(`Failed multiple times to get scores from ${scoreSaberID} page: ${pageOfScoreSaber}.`)
+                    console.log(`Failed multiple times to get scores from ${scoreSaberID} page: ${pageOfScoreSaber}.`);
                 }
                 else {
                     for (let i = 0; i < response.playerScores?.length; i++) {
@@ -269,7 +235,6 @@ class ScoreSaberUtils {
         console.log(`Reached end of unseen plays for ${scoreSaberID} from recent.`);
     }
 
-    //Updated to new API
     async getUserScoreOnLeaderboard(scoreSaberID, scoreSaberUserName, leaderboardId) {
 
         console.log(`Getting one score id: ${leaderboardId}, user: ${scoreSaberID} name: ${scoreSaberUserName}`);
@@ -300,7 +265,6 @@ class ScoreSaberUtils {
         })
     }
 
-    //Updated to new API
     async getAllScores(scoreSaberID) {
         let pageOfScoreSaber = 1;
         let reachedLastPage = false;
