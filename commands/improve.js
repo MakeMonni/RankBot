@@ -102,7 +102,10 @@ class Test extends Command {
 module.exports = Test;
 
 function Comparer(operator, target, current) {
-    if (operator === "over") {
+    if (current === 100) {
+        return false;
+    }
+    else if (operator === "over") {
         if (target < current) return true;
         else return false
     }
