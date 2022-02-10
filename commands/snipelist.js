@@ -68,12 +68,16 @@ class Snipelist extends Command {
             let unplayedScoreHashes = [];
             let targetQuery = { player: targetUserScId };
             let userQuery = { player: user.scId };
+            let category = null;
+            userName = userName.replace(" ", "_")
 
             if (args[1] === "ranked") {
+                category = "ranked";
                 targetQuery.ranked = true;
                 userQuery.ranked = true;
             }
             else if (args[1] === "unranked") {
+                category = "unranked";
                 targetQuery.ranked = false;
                 userQuery.ranked = false;
             }
@@ -108,7 +112,7 @@ class Snipelist extends Command {
                 return;
             }
 
-            const playlistAttachment = await client.misc.createPlaylist(`Sniping_${userName}`, snipeScoreHashes, "https://cdn.discordapp.com/attachments/840144337231806484/893593688373084210/unknown.png");
+            const playlistAttachment = await client.misc.createPlaylist(`Sniping_${userName}`, snipeScoreHashes, "https://cdn.discordapp.com/attachments/840144337231806484/893593688373084210/unknown.png", `${client.config.syncURL}/snipe?p=${user.scId}?t=${targetUserScId}?c=${category}?n=${userName}`);
             botmsg.delete();
             await message.channel.send(`${message.author}, here is your playlist. Get sniping.\nIt has ${snipeScoreHashes.length} maps.`, playlistAttachment);
         }

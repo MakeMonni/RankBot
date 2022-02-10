@@ -11,5 +11,6 @@
     "twitchClientId": "",
     "twitchClientSecret": "",
     "streamAdvertisementChannelID": "",
-    "deletedRankedMaps" : [13561, 6085, 1455, 2656, 2874]
+    "deletedRankedMaps" : [13561, 6085, 1455, 2656, 2874],
+    "syncURL" : ""
 }

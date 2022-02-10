@@ -7,7 +7,7 @@ class MiscUtils {
         this.client = client;
     }
 
-    async createPlaylist(playlistName, songs, imageLink) {
+    async createPlaylist(playlistName, songs, imageLink, syncEndpoint) {
         let image = "";
         if (imageLink) {
             try {
@@ -19,15 +19,22 @@ class MiscUtils {
                 console.log(err)
             }
         }
+        let syncurl = "";
+        if (syncEndpoint) syncurl = syncEndpoint;
 
-        const playlist = {
+        let playlist = {
             playlistTitle: playlistName,
             playlistAuthor: "RankBot",
-            playlistDescription: "",
-            customData: { AllowDuplicates: false },
+            playlistDescription: `Playlist has ${songs.length} maps.`,
             songs: songs,
+            customData: {
+                AllowDuplicates: false,
+                syncURL: syncurl
+            },
             image: image
         }
+
+
 
         const playlistString = JSON.stringify(playlist, null, 2);
         const playlistBuffer = Buffer.from(playlistString, "utf-8");

@@ -76,7 +76,7 @@ class Playlist extends Command {
                 if (!hashlist.some(e => e.hash === maps[i].hash)) hashlist.push(mapHash);
             }
 
-            let playlistAttatchment = await client.misc.createPlaylist("Ranked", hashlist, "https://cdn.discordapp.com/attachments/840144337231806484/880192078217355284/750250421259337748.png");
+            let playlistAttatchment = await client.misc.createPlaylist("Ranked", hashlist, "https://cdn.discordapp.com/attachments/840144337231806484/880192078217355284/750250421259337748.png", `${client.config.syncURL}/ranked`);
             await message.channel.send("Here is your playlist with all ranked maps.", playlistAttatchment);
         }
 
