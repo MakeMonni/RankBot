@@ -8,7 +8,7 @@ Go to the [Discord developer portal](https://discord.com/developers/). Setup the
 ### Setting the bot up locally
 You can find these ids from checking the link to the admin channel. First directory is the id of the server and the 2nd id is of the channel. You also need a local ([guide](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-windows/)) or remote MongoDB server. Add the mongourl of your server in mongourl like so: `mongodb://<url>:<port>`. Also add a name for your collection under `dbName`. Also add your preferred prefix character with `prefix`. Lastly add your preferred update interval time (in hours) by adding an integer to `updateIntervalHours`. Save the config as `config.json`.
 ### Starting the bot up locally
-If you haven't installed the required node_modules, run:
+This bot uses Node.js. You can download it to Windows from [here](https://nodejs.org/en/download/) or to Linux using your package manager. If you haven't installed the required node_modules, run:
 ```
 npm install
 ```
