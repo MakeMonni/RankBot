@@ -194,6 +194,13 @@ class BeatSaverUtils {
 
     async getMapDataGithub() {
         console.log("Pulling scraped BeatSaver data from github.")
+        if (!fs.existsSync('./ScrapeSaverData/')) {
+            fs.mkdir('./ScrapeSaverData/', (err) => { 
+                if(err) return console.error(err); 
+            }, 
+            console.log('Directory ./ScrapeSaverData/ created successfully!') 
+            );
+        }
         const data = await fetch(`https://github.com/andruzzzhka/BeatSaberScrappedData/raw/master/combinedScrappedData.zip`)
             .then(res => {
                 const dest = fs.createWriteStream('./ScrapeSaverData/Latest.zip');
