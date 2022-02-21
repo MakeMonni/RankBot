@@ -1,5 +1,5 @@
 const Command = require("../core/command/command.js");
-const Discord = require("discord.js")
+const Discord = require("discord.js");
 
 class Me extends Command {
     async run(client, message, args) {
