@@ -8,14 +8,19 @@ class Randombsr extends Command {
         //Very spaghetti
         let njsString = "||";
         for (let i = 0; i < map[0].versions[0].diffs.length; i++) {
-            njsString+= `\n${map[0].versions[0].diffs[i].difficulty} - ${map[0].versions[0].diffs[i].njs}` 
+            njsString += `${map[0].versions[0].diffs[i].difficulty} - ${map[0].versions[0].diffs[i].njs}`
+            if (i != map[0].versions[0].diffs.length) njsString += `\n`
         }
-        njsString+= "||"
+        njsString += "||"
+
+        const mapMinutes = Math.floor(map[0].metadata.duration / 60)
+        const mapSecond =  (map[0].metadata.duration - mapMinutes * 60).toString().padStart(2, "0")
 
         const embed = new Discord.MessageEmbed()
-            .addField(`\u200b`, `||${map[0].metadata.songName} ${map[0].metadata.songSubName} by ${map[0].metadata.levelAuthorName}||`)
+            .addField(`Map`, `||${map[0].metadata.songName} ${map[0].metadata.songSubName} by ${map[0].metadata.levelAuthorName}||`)
             .addField(`\u200b`, `\`!bsr ${map[0].key}\``)
-            .addField(`\u200b`, `NJS: ${njsString}`)
+            .addField(`Duration`, `${mapMinutes}:${mapSecond}`)
+            .addField(`NJS`, `${njsString}`)
             .addField(`\u200b`, `[Download](${map[0].versions[0].downloadURL}) | [BeatSaver](https://beatsaver.com/maps/${map[0].key.toLowerCase()}) | [Preview](https://skystudioapps.com/bs-viewer/?id=${map[0].key})`);
 
         await message.channel.send(embed);
