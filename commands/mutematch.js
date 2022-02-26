@@ -7,7 +7,7 @@ class MuteMatch extends Command {
             const guild = await client.guilds.fetch(Gid);
             const res = await client.db.collection("activeMatches").findOne({ 'match.coordinator.id': message.author.id });
             if (!res) {
-                await message.channel.send("You had no active match...");
+                await message.channel.send("You have no active match...");
                 return;
             }
             const match = res.match;
@@ -19,7 +19,7 @@ class MuteMatch extends Command {
                 membvoice.serverMute ? await membvoice.setMute(false, "Match").catch(err => console.error(err)) : await membvoice.setMute(true, "Match").catch(err => console.error(err));
             }
             const member = await guild.members.fetch({ user: match.players[0].id });
-            member.voice.serverMute ? message.channel.send("Match muted.") : message.channel.send("Match unmuted")
+            member.voice.serverMute ? message.channel.send("Match muted.") : message.channel.send("Match unmuted.")
         }
         else {
             message.channel.send("You are not a coordinator so you cannot mute a match...")
