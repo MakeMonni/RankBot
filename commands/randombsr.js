@@ -5,9 +5,8 @@ class Randombsr extends Command {
     async run(client, message, args) {
         const map = await client.db.collection("beatSaverLocal").aggregate([{ $match: { automapper: false } }, { $sample: { size: 1 } }]).toArray();
 
+        //Very spaghetti
         let njsString = "||";
-
-        console.log(map[0].versions[0]);
         for (let i = 0; i < map[0].versions[0].diffs.length; i++) {
             njsString+= `\n${map[0].versions[0].diffs[i].difficulty} - ${map[0].versions[0].diffs[i].njs}` 
         }
