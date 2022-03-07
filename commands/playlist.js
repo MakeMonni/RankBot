@@ -68,16 +68,37 @@ class Playlist extends Command {
         }
 
         else if (args[0] === "ranked") {
-            const maps = await client.db.collection("scoresaberRankedMaps").find({}).toArray();
-
             let hashlist = [];
+            let maps = [];
+            let syncURL = "";
+
+            if (args[1] === "over" || args[1] === "under") {
+                if (isNaN(args[2])) {
+                    message.channel.send("Please use a number.");
+                    return;
+                }
+
+                let finder;
+                if (args[1] === "over") {
+                    finder = { stars: { $gt: +args[2] } }
+                }
+                else {
+                    finder = { stars: { $lt: +args[2] } }
+                }
+                maps = await client.db.collection("scoresaberRankedMaps").find(finder).toArray();
+            }
+            else {
+                syncURL = client.config.syncURL + "/ranked"
+                maps = await client.db.collection("scoresaberRankedMaps").find({}).toArray();
+            }
+
             for (let i = 0; i < maps.length; i++) {
                 const mapHash = { hash: maps[i].hash }
                 if (!hashlist.some(e => e.hash === maps[i].hash)) hashlist.push(mapHash);
             }
 
-            let playlistAttatchment = await client.misc.createPlaylist("Ranked", hashlist, "https://cdn.discordapp.com/attachments/840144337231806484/880192078217355284/750250421259337748.png", `${client.config.syncURL}/ranked`);
-            await message.channel.send("Here is your playlist with all ranked maps.", playlistAttatchment);
+            let playlistAttatchment = await client.misc.createPlaylist("Ranked", hashlist, "https://cdn.discordapp.com/attachments/840144337231806484/880192078217355284/750250421259337748.png", `${syncURL}`);
+            await message.channel.send("Here is your playlist with ranked maps.", playlistAttatchment);
         }
 
         else {
