@@ -23,10 +23,16 @@ class BeatSaviorUtils {
         let executions = 0;
         const scores = await limiter.schedule({ id: `BeatSavior id: ${scoreSaberID}` }, async () => {
             executions++;
-            const response = await fetch(`https://www.beatsavior.io/api/livescores/player/${scoreSaberID}`)
-                .then(res => res.json())
-                .catch(err => { throw new Error(err) });
-
+            let response
+            try {
+                response = await fetch(`https://www.beatsavior.io/api/livescores/player/${scoreSaberID}`)
+                    .then(res => res.json())
+                    .catch(err => { throw new Error(err) });
+            }
+            catch (err) {
+                console.log(err)
+                return null;
+            }
             if (response[0] != null) {
                 return await response;
             }
