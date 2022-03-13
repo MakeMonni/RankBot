@@ -25,7 +25,7 @@ class BeatSaviorUtils {
             executions++;
             let response
             try {
-                response = await fetch(`https://www.beatsavior.io/api/livescores/player/${scoreSaberID}`)
+                response = await fetch(`https://beat-savior.herokuapp.com/api/livescores/player/${scoreSaberID}`)
                     .then(res => res.json())
                     .catch(err => { throw new Error(err) });
             }
