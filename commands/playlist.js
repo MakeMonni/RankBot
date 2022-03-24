@@ -60,8 +60,14 @@ class Playlist extends Command {
                 return;
             }
             const maps = await client.db.collection("beatSaverLocal").find({ "metadata.levelAuthorName": { $regex: `^${args[1]}$`, $options: "i" } }).toArray();
+            if (maps.length == 0) {
+                await message.channel.send(`Found no maps from mapper: ${args[1]}`);
+                return;
+            }
 
             let mapHashes = await hashes(maps);
+
+
 
             const playlistAttachment = await client.misc.createPlaylist(args[1], mapHashes, maps[0].versions[0].coverURL, `${client.config.syncURL}/mapper?t=${args[1]}`);
             await message.channel.send(`${message.author}, Here is your maps by ${args[1]}\nIt has ${maps.length} maps.`, playlistAttachment);
