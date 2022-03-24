@@ -112,12 +112,17 @@ class Snipelist extends Command {
                 return;
             }
 
+            let syncURL = `${client.config.syncURL}/snipe?p=${user.scId}?t=${targetUserScId}?c=${category}?n=${userName}`
             let scoresToSnipe;
-            console.log(args[2])
-            if (args[2] === `unplayed`) scoresToSnipe = unplayedScoreHashes;
+
+            if (args[2] === `unplayed`) {
+                scoresToSnipe = unplayedScoreHashes;
+                syncURL+=`?u=true`
+            }
             else scoresToSnipe = snipeScoreHashes;
 
-            const playlistAttachment = await client.misc.createPlaylist(`Sniping_${userName}`, scoresToSnipe, "https://cdn.discordapp.com/attachments/840144337231806484/893593688373084210/unknown.png", `${client.config.syncURL}/snipe?p=${user.scId}?t=${targetUserScId}?c=${category}?n=${userName}`);
+
+            const playlistAttachment = await client.misc.createPlaylist(`Sniping_${userName}`, scoresToSnipe, "https://cdn.discordapp.com/attachments/840144337231806484/893593688373084210/unknown.png", syncURL);
             botmsg.delete();
             await message.channel.send(`${message.author}, here is your playlist. Get sniping.\nIt has ${snipeScoreHashes.length} maps.`, playlistAttachment);
         }
