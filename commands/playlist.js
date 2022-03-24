@@ -63,7 +63,7 @@ class Playlist extends Command {
 
             let mapHashes = await hashes(maps);
 
-            const playlistAttachment = await client.misc.createPlaylist(args[1], mapHashes, maps[0].versions[0].coverURL);
+            const playlistAttachment = await client.misc.createPlaylist(args[1], mapHashes, maps[0].versions[0].coverURL, `${client.config.syncURL}/mapper?t=${args[1]}`);
             await message.channel.send(`${message.author}, Here is your maps by ${args[1]}\nIt has ${maps.length} maps.`, playlistAttachment);
         }
 

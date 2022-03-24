@@ -188,6 +188,7 @@ class ScoreSaberUtils {
                     .catch(err => { throw new Error(err) });
                 if (executions > 3) {
                     console.log(`Failed multiple times to get scores from ${scoreSaberID} page: ${pageOfScoreSaber}.`);
+                    throw new Error(err);
                 }
                 else {
                     for (let i = 0; i < response.playerScores?.length; i++) {

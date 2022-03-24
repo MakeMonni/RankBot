@@ -17,7 +17,8 @@ class Gains extends Command {
                     await client.scoresaber.getRecentScores(user.scId);
                 }
                 catch (err) {
-                    botMessage.edit("Failed to get scores....")
+                    botMessage.edit("Failed to get scores. Try again later.");
+                    return;
                 }
 
 
