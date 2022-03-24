@@ -124,7 +124,7 @@ class Snipelist extends Command {
 
             const playlistAttachment = await client.misc.createPlaylist(`Sniping_${userName}`, scoresToSnipe, "https://cdn.discordapp.com/attachments/840144337231806484/893593688373084210/unknown.png", syncURL);
             botmsg.delete();
-            await message.channel.send(`${message.author}, here is your playlist. Get sniping.\nIt has ${snipeScoreHashes.length} maps.`, playlistAttachment);
+            await message.channel.send(`${message.author}, here is your playlist. Get sniping.\nIt has ${scoresToSnipe.length} maps.`, playlistAttachment);
         }
     }
 }
