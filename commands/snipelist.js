@@ -112,12 +112,12 @@ class Snipelist extends Command {
                 return;
             }
 
-            let syncURL = `${client.config.syncURL}/snipe?p=${user.scId}?t=${targetUserScId}?c=${category}?n=${userName}`
+            let syncURL = `${client.config.syncURL}/snipe?p=${user.scId}&t=${targetUserScId}&c=${category}&n=${userName}`
             let scoresToSnipe;
 
             if (args[2] === `unplayed`) {
                 scoresToSnipe = unplayedScoreHashes;
-                syncURL+=`?u=true`
+                syncURL+=`&u=true`
             }
             else scoresToSnipe = snipeScoreHashes;
 

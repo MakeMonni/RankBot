@@ -59,18 +59,23 @@ class Playlist extends Command {
                 await message.channel.send("No mapper provided")
                 return;
             }
-            const maps = await client.db.collection("beatSaverLocal").find({ "metadata.levelAuthorName": { $regex: `^${args[1]}$`, $options: "i" } }).toArray();
-            if (maps.length == 0) {
-                await message.channel.send(`Found no maps from mapper: ${args[1]}`);
-                return;
+
+            let syncMappers = "";
+            let allMaps = [];
+
+            for (let i = 0; i <= args.length-2; i++) {
+                const maps = await client.db.collection("beatSaverLocal").find({ "metadata.levelAuthorName": { $regex: `^${args[i+1]}$`, $options: "i" } }).toArray();
+                if (maps.length == 0) {
+                    await message.channel.send(`Found no maps from mapper: ${args[i+1]}`);
+                    return;
+                }
+                syncMappers += args[i +1] + ","
+                allMaps.push(...maps);
             }
+            let mapHashes = await hashes(allMaps);
 
-            let mapHashes = await hashes(maps);
-
-
-
-            const playlistAttachment = await client.misc.createPlaylist(args[1], mapHashes, maps[0].versions[0].coverURL, `${client.config.syncURL}/mapper?t=${args[1]}`);
-            await message.channel.send(`${message.author}, Here is your maps by ${args[1]}\nIt has ${maps.length} maps.`, playlistAttachment);
+            const playlistAttachment = await client.misc.createPlaylist(syncMappers.slice(0, -1), mapHashes, allMaps[0].versions[0].coverURL, `${client.config.syncURL}/mapper?t=${syncMappers}`);
+            await message.channel.send(`${message.author}, Here is your maps by ${syncMappers}\nIt has ${allMaps.length} maps.`, playlistAttachment);
         }
 
         else if (args[0] === "ranked") {
