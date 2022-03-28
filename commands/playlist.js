@@ -73,8 +73,9 @@ class Playlist extends Command {
                 allMaps.push(...maps);
             }
             let mapHashes = await hashes(allMaps);
+            syncMappers = syncMappers.slice(0, -1);
 
-            const playlistAttachment = await client.misc.createPlaylist(syncMappers.slice(0, -1), mapHashes, allMaps[0].versions[0].coverURL, `${client.config.syncURL}/mapper?t=${syncMappers}`);
+            const playlistAttachment = await client.misc.createPlaylist(syncMappers, mapHashes, allMaps[0].versions[0].coverURL, `${client.config.syncURL}/mapper?t=${syncMappers}`);
             await message.channel.send(`${message.author}, Here is your maps by ${syncMappers}\nIt has ${allMaps.length} maps.`, playlistAttachment);
         }
 
