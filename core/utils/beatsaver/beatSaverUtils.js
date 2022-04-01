@@ -159,7 +159,7 @@ class BeatSaverUtils {
     async getMapDataByKey(key) {
         console.log("Getting data from BeatSaver instead of DB.");
 
-        let map = await BeatSaverLimiter.schedule(async () => fetch(`https://beatsaver.com/api/maps/id/${key}`, options)
+        let map = await BeatSaverLimiter.schedule(async () => fetch(`https://api.beatsaver.com/maps/id/${key}`, options)
             .then(res => this.checkMapStatus(res, key))
             .then(res => res.json())
             .catch(err => console.log(err)));
@@ -177,7 +177,7 @@ class BeatSaverUtils {
     async getMapDataByHash(hash) {
         console.log("Getting data from BeatSaver instead of DB.");
 
-        let mapData = await BeatSaverLimiter.schedule(async () => fetch(`https://beatsaver.com/api/maps/hash/${hash}`, options)
+        let mapData = await BeatSaverLimiter.schedule(async () => fetch(`https://api.beatsaver.com/maps/hash/${hash}`, options)
             .then(res => this.checkMapStatus(res, hash))
             .then(res => res.json())
             .catch(err => console.log(err)))
