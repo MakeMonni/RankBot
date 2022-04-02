@@ -379,11 +379,23 @@ class ScoreSaberUtils {
             const latestScore = await this.db.collection("discordRankBotScores").find({ player: users[i] }).sort({ date: -1 }).limit(1).toArray();
             if (latestScore[0].date < (Date.now() - 86400000)) {
                 //Add check here with apicheck with 1 score, if it's not the same as the most recent in db, do the recent search
-                await this.getRecentScores(users[i])
+                await this.getRecentScores(users[i]);
                 usersUpdated++;
             }
         }
         console.log("Updated scores for", usersUpdated, "users")
+    }
+
+    async rankTracker() {
+        const users = await this.db.collection("discordRankBotUsers").find().toArray();
+        for (let i = 0; i < users.length; i++) {
+            const scUser = await this.getUser(users[i].scId);
+            if (scUser.rank === 0) {
+                scUser.rank = null;
+                scUser.countryRank = null;
+            }
+            await this.db.collection("discordRankBotUsers").updateOne({ discId: users[i].discId }, { $push: { hisoricalRank: { g: scUser.rank, c: scUser.countryRank } } });
+        }
     }
 
     async calculateMaxScore(notes) {

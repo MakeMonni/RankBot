@@ -18,6 +18,7 @@ MongoClient.connect(config.mongourl, async (err, client) => {
     const daily = schedule.scheduleJob('0 7 * * *', async function () {
         console.log("Daily updates");
         await botClient.scoresaber.scoreTracker();
+        await botClient.scoresaber.rankTracker();
     });
 
     const roleUpdates = schedule.scheduleJob('0 0,6,12,18 * * *', async function () {
