@@ -371,7 +371,7 @@ class ScoreSaberUtils {
         else return;
     }
 
-    //Update
+    //TODO: Update
     async scoreTracker() {
         const users = await this.db.collection("discordRankBotScores").distinct("player");
         let usersUpdated = 0;
@@ -394,7 +394,7 @@ class ScoreSaberUtils {
                 scUser.rank = null;
                 scUser.countryRank = null;
             }
-            await this.db.collection("discordRankBotUsers").updateOne({ discId: users[i].discId }, { $push: { hisoricalRank: { g: scUser.rank, c: scUser.countryRank } } });
+            await this.db.collection("discordRankBotUsers").updateOne({ discId: users[i].discId }, { $push: { historicalRank: { g: scUser.rank, c: scUser.countryRank } } });
         }
     }
 
