@@ -23,6 +23,7 @@ class MemberHandler {
         this.client.on("guildMemberRemove", async member => {
             await this.client.channels.cache.get(this.config.adminchannelID).send(`${member.user.username} left the server.`)
             let user = await this.client.db.collection("discordRankBotUsers").findOne({ discId: member.id });
+            await botClient.db.collection("landingMemberList").deleteOne({ userId: member.id });
 
             if (!user) {
                 console.log(`${member.user.username} left server but was not in db`);
