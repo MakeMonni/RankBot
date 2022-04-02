@@ -166,7 +166,7 @@ class ScoreSaberUtils {
             play["beatsavior"] = beatSaviorData;
         }
 
-        await this.db.collection("discordRankBotScores").updateOne({ hash: play.hash, player: play.player, diff: play.diff }, { $set: play }, { upsert: true })
+        await this.db.collection("discordRankBotScores").replaceOne({ hash: play.hash, player: play.player, diff: play.diff }, play, { upsert: true })
     }
 
     async getRecentScores(scoreSaberID) {
