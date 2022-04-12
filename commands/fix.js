@@ -1,5 +1,16 @@
 const Command = require("../core/command/command.js");
 const Discord = require("discord.js");
+const Bottleneck = require(`bottleneck`);
+const fetch = require('node-fetch');
+
+const hashSearchLimiter = new Bottleneck({
+    reservoir: 200,
+    reservoirRefreshAmount: 200,
+    //Millisecond - Second - Minutes
+    reservoirRefreshInterval: 1000,
+
+    minTime: 5
+})
 
 class Fix extends Command {
     async run(client, message, args) {
@@ -47,7 +58,7 @@ class Fix extends Command {
                 await message.channel.send(`Updated ${response.modifiedCount} maps to include ranked true`);
                 await message.channel.send(`Removed ranked status from ${response2.modifiedCount}.`)
             }
-            else {
+            if (args[0] === "ppcheck") {
                 console.time("ppcheck")
                 let scoresToRecheck = [];
                 let userIdName = [];
@@ -74,6 +85,45 @@ class Fix extends Command {
                 }
                 console.timeEnd("ppcheck")
                 await message.channel.send(`Recheck ${scoresToRecheck.length} scores for a pp value`);
+            }
+            if (args[0] === "jsondump") {
+                const scores = await client.db.collection("discordRankBotScores").find({ leaderboardId: parseInt(args[1]) }).toArray();
+
+                console.log(scores);
+
+                const jsonScores = JSON.stringify(scores, null, 2);
+                const jsonBuffer = Buffer.from(jsonScores, "utf-8");
+                const attachment = new Discord.MessageAttachment(jsonBuffer, `jsonDump-${args[1]}.json`);
+                await message.channel.send("Here you go", attachment);
+            }
+            else {
+                return;
+                const maps = await client.db.collection("beatSaverLocal").find({ "versions.diffs.me": { $exists: false } }).toArray();
+                console.time()
+                const promises = [];
+                for (let i = 0; i < maps.length; i++) {
+                    promises.push(
+                        hashSearchLimiter.schedule(async () => fetch(`https://beatsaber.tskoll.com/api/v1/hash/${maps[i].versions[0].hash}`)
+                            .then(res => res.json()))
+                            .then(res => {
+
+                                //client.db.collection("beatSaverLocal").updateOne({ "versions.hash": res.hash }, { $set: { me: 1, ne: 2, cinema: 3 } })
+                            })
+                            .catch(err => console.log(maps[i].versions[0].hash)))
+
+                }
+                await Promise.all(promises);
+                console.log(promises);
+                console.timeEnd()
+
+                //1 = ne
+                //2 = me
+                //4 = chroma
+                //8 = cinema
+
+                //  look for maps with this.
+                // hit the maps through https://beatsaber.tskoll.com/api/v1/hash/${hash}
+                // Update me/ne/chroma etc. fields.
             }
         }
     }
