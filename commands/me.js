@@ -3,7 +3,15 @@ const Discord = require("discord.js");
 
 class Me extends Command {
     async run(client, message, args) {
-        const dbuser = await client.db.collection("discordRankBotUsers").findOne({ discId: message.author.id });
+        let dbuser;
+        if (args[0]) {
+            const user = await client.misc.getUserFromMention(args[0]);
+            dbuser = await client.db.collection("discordRankBotUsers").findOne({ discId: user.id })
+        }
+        else {
+            dbuser = await client.db.collection("discordRankBotUsers").findOne({ discId: message.author.id });
+        }
+
         if (!dbuser) {
             message.channel.send(`I'm sorry I could not find you in the database.\nTry using ${client.config.prefix}addme <scoresaberid> to get added into this awesome system.`);
         } else {
