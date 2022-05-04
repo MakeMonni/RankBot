@@ -27,7 +27,7 @@ class CreatePlaylist extends Command {
                 }
             }
         }
-        const playlistAttachment = await client.misc.createPlaylist(args_maps[0], mapHashes, playlistImage);
+        const playlistAttachment = await client.misc.createPlaylist(args_maps[0], mapHashes, playlistImage, undefined, "");
         await message.channel.send(`${message.author}, here is your playlist.`, playlistAttachment);
     }
 }

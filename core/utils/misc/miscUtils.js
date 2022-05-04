@@ -7,7 +7,7 @@ class MiscUtils {
         this.client = client;
     }
 
-    async createPlaylist(playlistName, songs, imageLink, syncEndpoint) {
+    async createPlaylist(playlistName, songs, imageLink, syncEndpoint, playlistDesc) {
         let image = "";
         if (imageLink) {
             try {
@@ -22,10 +22,13 @@ class MiscUtils {
         let syncurl = "";
         if (syncEndpoint) syncurl = syncEndpoint;
 
+        const date = new Date();
+        const dateString = `${date.getDate()}.${date.getMonth()+1}.${date.getFullYear()} - ${date.getHours()}:${date.getMinutes()}`
+
         let playlist = {
             playlistTitle: playlistName,
             playlistAuthor: "RankBot",
-            playlistDescription: `Playlist has ${songs.length} maps.`,
+            playlistDescription: `Playlist has ${songs.length} maps.` + playlistDesc + `\nPlaylist was created/updated on ${dateString}`,
             songs: songs,
             customData: {
                 AllowDuplicates: false,

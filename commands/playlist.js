@@ -21,7 +21,7 @@ class Playlist extends Command {
                 const maps = await client.db.collection("beatSaverLocal").aggregate([{ $match: { automapper: false } }, { $sample: { size: amount } }]).toArray();
                 const mapHashes = await hashes(maps);
 
-                const playlistAttachment = await client.misc.createPlaylist("RandomPlaylist", mapHashes, "https://cdn.discordapp.com/attachments/818358679296147487/844607045130387526/Banana_Dice.jpg")
+                const playlistAttachment = await client.misc.createPlaylist("RandomPlaylist", mapHashes, "https://cdn.discordapp.com/attachments/818358679296147487/844607045130387526/Banana_Dice.jpg", null, "A random playlist :)")
                 await message.channel.send(`${message.author}, here is your random playlist. :)`, playlistAttachment);
             }
             else {
@@ -33,7 +33,7 @@ class Playlist extends Command {
             const maps = await client.db.collection("beatSaverLocal").find({ automapper: true }).toArray();
             let mapHashes = await hashes(maps);
 
-            const playlistAttachment = await client.misc.createPlaylist("BeatSage", mapHashes, "https://cdn.discordapp.com/attachments/840144337231806484/878784455798554645/abNYFk3F.png")
+            const playlistAttachment = await client.misc.createPlaylist("BeatSage", mapHashes, "https://cdn.discordapp.com/attachments/840144337231806484/878784455798554645/abNYFk3F.png", undefined, "Beatsage maps, for some reason")
             await message.channel.send(`${message.author}, here is your BeatSage playlist, idk why you want this but here you go.\nIt has ${maps.length} maps.`, playlistAttachment);
         }
 
@@ -62,21 +62,36 @@ class Playlist extends Command {
 
             let syncMappers = "";
             let allMaps = [];
+            let playlistDescription = "Playlist has maps from the following mappers: ";
 
-            for (let i = 0; i <= args.length-2; i++) {
-                const maps = await client.db.collection("beatSaverLocal").find({ "metadata.levelAuthorName": { $regex: `^${args[i+1]}$`, $options: "i" } }).toArray();
+            // TODO: Fix this spaghetti
+
+            for (let i = 0; i <= args.length - 2; i++) {
+                const search = args[i+1].replaceAll(`_`, ` `);
+                const maps = await client.db.collection("beatSaverLocal").find({ "metadata.levelAuthorName": { $regex: `^${search}$`, $options: "i" } }).toArray();
                 if (maps.length == 0) {
-                    await message.channel.send(`Found no maps from mapper: ${args[i+1]}`);
+                    //add similar result suggestion here
+                    await message.channel.send(`Found no maps from mapper: ${args[i + 1]}`);
                     return;
                 }
-                syncMappers += args[i +1] + ","
+                syncMappers += args[i + 1] + ","
+                playlistDescription += `\n${args[i + 1]}`
                 allMaps.push(...maps);
             }
             let mapHashes = await hashes(allMaps);
             syncMappers = syncMappers.slice(0, -1);
 
-            const playlistAttachment = await client.misc.createPlaylist(syncMappers, mapHashes, allMaps[0].versions[0].coverURL, `${client.config.syncURL}/mapper?t=${syncMappers}`);
-            await message.channel.send(`${message.author}, Here is your maps by ${syncMappers}\nIt has ${allMaps.length} maps.`, playlistAttachment);
+            let playlistName;
+            console.log(args.length - 2)
+            if (args.length - 2 <= 0) {
+                playlistName = "VariousMappers"
+            }
+            else {
+                playlistName = syncMappers;
+            }
+
+            const playlistAttachment = await client.misc.createPlaylist(playlistName, mapHashes, allMaps[0].versions[0].coverURL, `${client.config.syncURL}/mapper?t=${syncMappers}`, playlistDescription);
+            await message.channel.send(`${message.author}, Here is your maps by ${playlistName}\nIt has ${allMaps.length} maps.`, playlistAttachment, playlistDescription);
         }
 
         else if (args[0] === "ranked") {
@@ -84,32 +99,43 @@ class Playlist extends Command {
             let maps = [];
             let syncURL = "";
 
-            if (args[1] === "over" || args[1] === "under") {
-                if (isNaN(args[2])) {
-                    message.channel.send("Please use a number.");
-                    return;
+            if (args[1] === "ordered") {
+                maps = await client.db.collection("scoresaberRankedMaps").find({}).sort({ stars: 1 }).toArray();
+                for (let i = 0; i < maps.length; i++) {
+                    const mapHash = { hash: maps[i].hash, difficulties: [{ characteristic: client.beatsaver.convertDiffNameBeatSaver(maps[i].diff) }] };
+                    hashlist.push(mapHash);
                 }
+            }
 
-                let finder;
-                if (args[1] === "over") {
-                    finder = { stars: { $gt: +args[2] } }
+            else {
+                if (args[1] === "over" || args[1] === "under") {
+                    if (isNaN(args[2])) {
+                        message.channel.send("Please use a number.");
+                        return;
+                    }
+
+                    let finder;
+                    if (args[1] === "over") {
+                        finder = { stars: { $gt: +args[2] } }
+                    }
+                    else {
+                        finder = { stars: { $lt: +args[2] } }
+                    }
+                    maps = await client.db.collection("scoresaberRankedMaps").find(finder).toArray();
                 }
                 else {
-                    finder = { stars: { $lt: +args[2] } }
+                    syncURL = client.config.syncURL + "/ranked"
+                    maps = await client.db.collection("scoresaberRankedMaps").find({}).toArray();
                 }
-                maps = await client.db.collection("scoresaberRankedMaps").find(finder).toArray();
-            }
-            else {
-                syncURL = client.config.syncURL + "/ranked"
-                maps = await client.db.collection("scoresaberRankedMaps").find({}).toArray();
+
+                for (let i = 0; i < maps.length; i++) {
+                    const mapHash = { hash: maps[i].hash }
+                    if (!hashlist.some(e => e.hash === maps[i].hash)) hashlist.push(mapHash);
+                }
             }
 
-            for (let i = 0; i < maps.length; i++) {
-                const mapHash = { hash: maps[i].hash }
-                if (!hashlist.some(e => e.hash === maps[i].hash)) hashlist.push(mapHash);
-            }
 
-            let playlistAttatchment = await client.misc.createPlaylist("Ranked", hashlist, "https://cdn.discordapp.com/attachments/840144337231806484/880192078217355284/750250421259337748.png", `${syncURL}`);
+            let playlistAttatchment = await client.misc.createPlaylist("Ranked", hashlist, "https://cdn.discordapp.com/attachments/840144337231806484/880192078217355284/750250421259337748.png", `${syncURL}`, "Ranked maps");
             await message.channel.send("Here is your playlist with ranked maps.", playlistAttatchment);
         }
 

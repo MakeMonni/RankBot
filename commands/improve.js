@@ -81,7 +81,7 @@ class Test extends Command {
                         }
 
                         botmsg.delete();
-                        const playlistAttachment = await client.misc.createPlaylist(`Improve_${args[0]}_${args[1]}`, hashlist, "https://cdn.discordapp.com/attachments/840144337231806484/900475734462705694/stronk.png");
+                        const playlistAttachment = await client.misc.createPlaylist(`Improve_${args[0]}_${args[1]}`, hashlist, "https://cdn.discordapp.com/attachments/840144337231806484/900475734462705694/stronk.png", "Playlist contains maps to improve on");
                         await message.channel.send(`${message.author}, here is your playlist. Time to improve\nIt has ${hashlist.length} maps.`, playlistAttachment);
                     }
                     else {
