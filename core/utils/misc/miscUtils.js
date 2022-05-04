@@ -28,7 +28,7 @@ class MiscUtils {
         let playlist = {
             playlistTitle: playlistName,
             playlistAuthor: "RankBot",
-            playlistDescription: `Playlist has ${songs.length} maps.` + playlistDesc + `\nPlaylist was created/updated on ${dateString}`,
+            playlistDescription: `Playlist has ${songs.length} maps.\n` + playlistDesc + `\nPlaylist was created/updated on ${dateString}`,
             songs: songs,
             customData: {
                 AllowDuplicates: false,
