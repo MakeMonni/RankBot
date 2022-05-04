@@ -82,7 +82,7 @@ class Playlist extends Command {
             syncMappers = syncMappers.slice(0, -1);
 
             let playlistName;
-            if (args.length - 2 <= 0) {
+            if (args.length - 2 >= 1) {
                 playlistName = "VariousMappers"
             }
             else {
