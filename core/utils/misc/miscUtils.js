@@ -23,7 +23,7 @@ class MiscUtils {
         if (syncEndpoint) syncurl = syncEndpoint;
 
         const date = new Date();
-        const dateString = `${date.getDate()}.${date.getMonth()+1}.${date.getFullYear()} - ${date.getHours()}:${date.getMinutes()}`
+        const dateString = `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()} - ${date.getHours()}:${date.getMinutes()}`
 
         let playlist = {
             playlistTitle: playlistName,
@@ -36,13 +36,14 @@ class MiscUtils {
             },
             image: image
         }
+        
+        return this.jsonAttachmentCreator(playlist, playlistName);
+    }
 
-
-
-        const playlistString = JSON.stringify(playlist, null, 2);
-        const playlistBuffer = Buffer.from(playlistString, "utf-8");
-
-        return new Discord.MessageAttachment(playlistBuffer, `${playlistName}.json`);
+    async jsonAttachmentCreator(json, name) {
+        const string = JSON.stringify(json, null, 2)
+        const buffer = Buffer.from(string, "utf-8");
+        return new Discord.MessageAttachment(buffer, `${name}.json`);
     }
 
     //https://discordjs.guide/miscellaneous/parsing-mention-arguments.html#using-regular-expressions

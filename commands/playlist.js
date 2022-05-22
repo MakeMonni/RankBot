@@ -67,7 +67,7 @@ class Playlist extends Command {
             // TODO: Fix this spaghetti
 
             for (let i = 0; i <= args.length - 2; i++) {
-                const search = args[i+1].replaceAll(`_`, ` `);
+                const search = args[i + 1].replaceAll(`_`, ` `);
                 const maps = await client.db.collection("beatSaverLocal").find({ "metadata.levelAuthorName": { $regex: `^${search}$`, $options: "i" } }).toArray();
                 if (maps.length == 0) {
                     //add similar result suggestion here
@@ -94,45 +94,43 @@ class Playlist extends Command {
         }
 
         else if (args[0] === "ranked") {
+
             let hashlist = [];
             let maps = [];
-            let syncURL = "";
 
             if (args[1] === "ordered") {
-                maps = await client.db.collection("scoresaberRankedMaps").find({}).sort({ stars: 1 }).toArray();
-                for (let i = 0; i < maps.length; i++) {
-                    const mapHash = { hash: maps[i].hash, difficulties: [{ characteristic: client.beatsaver.convertDiffNameBeatSaver(maps[i].diff) }] };
-                    hashlist.push(mapHash);
+                const res = await client.rankbotApi.apiCall(client.config.syncURL + "/ranked?t=ordered");
+                const attachment = await client.misc.jsonAttachmentCreator(res, "OrderedRanked");
+                await message.channel.send("Here is your ordered playlist with ranked maps.", attachment);
+                return;
+            }
+            else if (args[1] === "over" || args[1] === "under") {
+
+                if (isNaN(args[2])) {
+                    message.channel.send("Please use a number.");
+                    return;
                 }
+                let finder;
+                if (args[1] === "over") {
+                    finder = { stars: { $gt: +args[2] } }
+                }
+                else {
+                    finder = { stars: { $lt: +args[2] } }
+                }
+                maps = await client.db.collection("scoresaberRankedMaps").find(finder).toArray();
             }
 
             else {
-                if (args[1] === "over" || args[1] === "under") {
-                    if (isNaN(args[2])) {
-                        message.channel.send("Please use a number.");
-                        return;
-                    }
-
-                    let finder;
-                    if (args[1] === "over") {
-                        finder = { stars: { $gt: +args[2] } }
-                    }
-                    else {
-                        finder = { stars: { $lt: +args[2] } }
-                    }
-                    maps = await client.db.collection("scoresaberRankedMaps").find(finder).toArray();
-                }
-                else {
-                    syncURL = client.config.syncURL + "/ranked"
-                    maps = await client.db.collection("scoresaberRankedMaps").find({}).toArray();
-                }
-
-                for (let i = 0; i < maps.length; i++) {
-                    const mapHash = { hash: maps[i].hash }
-                    if (!hashlist.some(e => e.hash === maps[i].hash)) hashlist.push(mapHash);
-                }
+                const res = await client.rankbotApi.apiCall(client.config.syncURL + "/ranked");
+                const attachment = await client.misc.jsonAttachmentCreator(res, "ranked");
+                await message.channel.send("Here is your playlist with ranked maps.", attachment);
+                return;
             }
 
+            for (let i = 0; i < maps.length; i++) {
+                const mapHash = { hash: maps[i].hash }
+                if (!hashlist.some(e => e.hash === maps[i].hash)) hashlist.push(mapHash);
+            }
 
             let playlistAttatchment = await client.misc.createPlaylist("Ranked", hashlist, "https://cdn.discordapp.com/attachments/840144337231806484/880192078217355284/750250421259337748.png", `${syncURL}`, "Ranked maps");
             await message.channel.send("Here is your playlist with ranked maps.", playlistAttatchment);

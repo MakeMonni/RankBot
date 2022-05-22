@@ -6,7 +6,7 @@ const BeatSaverUtils = require("./utils/beatsaver/beatSaverUtils.js");
 const MiscUtils = require("./utils/misc/miscUtils.js");
 const BeatSaviorUtils = require("./utils/beatsavior/beatSaviorUtils.js");
 const TwitchUtils = require("./utils/twitch/twitchUtils.js");
-//const TAUtils = require("./utils/TA/TAUtils.js");
+const ApiUtils = require("./utils/api/apiUtils.js");
 
 class BotClient extends Client {
     constructor(db, config, commands, options) {
@@ -22,11 +22,11 @@ class BotClient extends Client {
         this.commandHandler.init();
 
         this.scoresaber = new ScoreSaberUtils(db, config, this);
-        this.beatsaver = new BeatSaverUtils(db, this)
-        this.misc = new MiscUtils(db, this)
+        this.beatsaver = new BeatSaverUtils(db, this);
+        this.misc = new MiscUtils(db, this);
         this.beatsavior = new BeatSaviorUtils(db, this);
-        this.twitch = new TwitchUtils(this, config)
-        //this.ta = new TAUtils(db, this)
+        this.twitch = new TwitchUtils(this, config);
+        this.rankbotApi = new ApiUtils(this, config);
 
         this.config = config;
         this.db = db;

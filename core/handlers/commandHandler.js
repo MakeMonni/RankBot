@@ -18,7 +18,15 @@ class CommandHandler {
             if(command === "losses") command = "gains"
 
             const cmd = this.commands.get(command);
-            if (cmd != null) await cmd.run(this.client, message, args);
+            if (cmd != null)
+            try {
+                await cmd.run(this.client, message, args);
+            }
+            catch (err)
+            {
+                console.log(err);
+                await message.channel.send("We ran into an error running this command, sorry.")
+            }
             else {
                 await message.channel.send(`No such command exists. \`${this.prefix}help\` if you need it.`)
             }
