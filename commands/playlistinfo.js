@@ -35,7 +35,7 @@ class PlaylistInfo extends Command {
 
                         for (let j = 0; j < data.songs[i].difficulties.length; j++) {
                             const difficultyData = map.versions[versionIndex]?.diffs.find(e => e.characteristic === client.beatsaver.findPlayCategory(data.songs[i].difficulties[j].characteristic) && e.difficulty === client.beatsaver.convertDiffNameBeatSaver(data.songs[i].difficulties[j].name));
-                            if (!difficultyData) mapInfo = mapInfo + `\nBut map did not have difficulty ${data.songs[i].difficulties[0].name}...`;
+                            if (!difficultyData) mapInfo = mapInfo + `\nERROR Difficulty did not exist ${data.songs[i].difficulties[0].name}!`;
                             else {
                                 const diff = client.beatsaver.convertDiffNameVisual(data.songs[i].difficulties[j].name);
                                 const category = data.songs[i].difficulties[j].characteristic;
