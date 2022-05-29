@@ -32,15 +32,17 @@ class PlaylistInfo extends Command {
                     mapInfo = mapInfo + (`${map.metadata.songName} ${map.metadata.songSubName} - ${map.metadata.songAuthorName} by ${map.metadata.levelAuthorName}\nKey: ${map.key} | BPM: ${map.metadata.bpm}`);
                     if (data.songs[i]?.difficulties !== undefined && data.songs[i]?.difficulties.length > 0) {
                         const versionIndex = map.versions.findIndex(versions => versions.hash === data.songs[i].hash.toUpperCase());
-                        const difficultyData = map.versions[versionIndex]?.diffs.find(e => e.characteristic === client.beatsaver.findPlayCategory(data.songs[i].difficulties[0].characteristic) && e.difficulty === client.beatsaver.convertDiffNameBeatSaver(data.songs[i].difficulties[0].name));
 
-                        if (!difficultyData) mapInfo = mapInfo + `\nBut map did not have difficulty ${data.songs[i].difficulties[0].name}...`;
-                        else {
-                            const diff = client.beatsaver.convertDiffNameVisual(data.songs[i].difficulties[0].name);
-                            const category = data.songs[i].difficulties[0].characteristic;
-                            difficultyDataArr.push(difficultyData);
+                        for (let j = 0; j < data.songs[i].difficulties.length; j++) {
+                            const difficultyData = map.versions[versionIndex]?.diffs.find(e => e.characteristic === client.beatsaver.findPlayCategory(data.songs[i].difficulties[j].characteristic) && e.difficulty === client.beatsaver.convertDiffNameBeatSaver(data.songs[i].difficulties[j].name));
+                            if (!difficultyData) mapInfo = mapInfo + `\nBut map did not have difficulty ${data.songs[i].difficulties[0].name}...`;
+                            else {
+                                const diff = client.beatsaver.convertDiffNameVisual(data.songs[i].difficulties[j].name);
+                                const category = data.songs[i].difficulties[j].characteristic;
+                                difficultyDataArr.push(difficultyData);
 
-                            mapInfo = mapInfo + ` | NJS: ${difficultyData.njs} | NPS: ${Math.round(difficultyData.nps * 100) / 100} | ${category}-${diff}`;
+                                mapInfo = mapInfo + `\n| NJS: ${difficultyData.njs} | NPS: ${Math.round(difficultyData.nps * 100) / 100} | ${category}-${diff}`;
+                            }
                         }
                     }
                     mapInfo = mapInfo + `\n-=-\n`;
