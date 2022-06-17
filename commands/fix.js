@@ -96,6 +96,23 @@ class Fix extends Command {
                 const attachment = new Discord.MessageAttachment(jsonBuffer, `jsonDump-${args[1]}.json`);
                 await message.channel.send("Here you go", attachment);
             }
+            if (args[0] === "mapdate") {
+                const maps = await client.db.collection("beatSaverLocal").find({ "versions.createdAt": { $type: "string" } }).toArray();
+                let changedMapCount = 0;
+                for (let i = 0; i < maps.length; i++) {
+                    let map = maps[i];
+                    for (let j = 0; j < map.versions.length; j++) {
+                        const date = new Date(map.versions[j].createdAt).getTime();
+                        if (date > 1000000000) {
+                            map.versions[j].createdAt = date;
+                            changedMapCount++
+                        }
+                    }
+                    await client.db.collection("beatSaverLocal").updateOne({key: map.key}, {$set: map});
+                }
+                console.log(maps.length);
+                await message.channel.send(`Changed ${changedMapCount} date formats.`)
+            }
             else {
                 return;
                 const maps = await client.db.collection("beatSaverLocal").find({ "versions.diffs.me": { $exists: false } }).toArray();

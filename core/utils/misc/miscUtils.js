@@ -28,7 +28,7 @@ class MiscUtils {
         let playlist = {
             playlistTitle: playlistName,
             playlistAuthor: "RankBot",
-            playlistDescription: `Playlist has ${songs.length} maps.\n` + playlistDesc + `\nPlaylist was created/updated on ${dateString}`,
+            playlistDescription: `Playlist has ${songs.length} maps.\n` + playlistDesc + `\nPlaylist was created/updated on:\n${dateString}`,
             songs: songs,
             customData: {
                 AllowDuplicates: false,
@@ -36,7 +36,7 @@ class MiscUtils {
             },
             image: image
         }
-        
+
         return this.jsonAttachmentCreator(playlist, playlistName);
     }
 

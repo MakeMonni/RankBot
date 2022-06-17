@@ -62,7 +62,7 @@ class Playlist extends Command {
 
             let syncMappers = "";
             let allMaps = [];
-            let playlistDescription = "Playlist has maps from the following mappers: ";
+            let playlistDescription = "Playlist has maps from ";
 
             // TODO: Fix this spaghetti
 
