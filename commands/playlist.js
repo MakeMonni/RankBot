@@ -21,7 +21,7 @@ class Playlist extends Command {
                 const maps = await client.db.collection("beatSaverLocal").aggregate([{ $match: { automapper: false } }, { $sample: { size: amount } }]).toArray();
                 const mapHashes = await hashes(maps);
 
-                const playlistAttachment = await client.misc.createPlaylist("RandomPlaylist", mapHashes, "https://cdn.discordapp.com/attachments/818358679296147487/844607045130387526/Banana_Dice.jpg", null, "A random playlist :)")
+                const playlistAttachment = await client.misc.createPlaylist("RandomPlaylist", mapHashes, "https://cdn.discordapp.com/attachments/818358679296147487/844607045130387526/Banana_Dice.jpg", `${client.config.syncURL}/random?a=${args[1]}`, "A random playlist :)")
                 await message.channel.send(`${message.author}, here is your random playlist. :)`, playlistAttachment);
             }
             else {
