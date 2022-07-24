@@ -62,8 +62,11 @@ class PlaylistUpdate extends Command {
                 if(errored > 0) msg+= `\nFailed on ${errored} maps.`
                 if(deleted > 0) msg+= `\nFound ${deleted} deleted maps.`
                 if(deleted > 0 && args[0] !== "clean") msg += ` Run this command like this \`${client.config.prefix}playlistupdate clean\` to remove deleted maps.`
+                
+                let attachmentArray = [playlistAttachmet]
+                if(changelog.length !== 0) attachmentArray.push(changeLogAttachtment)
 
-                await message.channel.send(msg, [playlistAttachmet, changeLogAttachtment]);
+                await message.channel.send(msg, attachmentArray);
             }
             catch (err) {
                 await message.channel.send("Failed to update this playlist, make sure it is a correct playlist.")
