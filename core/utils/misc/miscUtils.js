@@ -60,5 +60,10 @@ class MiscUtils {
 
         return await this.client.users.cache.get(id);
     }
+
+    formatedDate(inputdate) {
+        const date = new Date(inputdate)
+        return `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()} - ${date.getHours()}:${date.getMinutes().toString().padStart(2, `0`)}`
+    }
 }
 module.exports = MiscUtils;

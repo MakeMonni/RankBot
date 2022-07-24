@@ -19,7 +19,9 @@ class PlaylistUpdate extends Command {
             }
 
             let mapsUpdated = 0;
-            let errored = 0
+            let changelog = "";
+            let errored = 0;
+            let deleted = 0;
 
             // Add check for duplicate maps here.
 
@@ -30,20 +32,38 @@ class PlaylistUpdate extends Command {
 
                     if (!map) {
                         errored++;
+                        changelog += `${mapHash} could not be found.`
                         continue;
                     }
                     else if (mapHash !== map?.versions[0].hash) {
+                        const oldVerIndex = map.versions.map(e => e.hash).indexOf(mapHash);
+                        changelog += `${map.metadata.songAuthorName} - ${map.metadata.songName} by: ${map.metadata.levelAuthorName} \nOld: ${client.misc.formatedDate(map.versions[oldVerIndex].createdAt)} \nNew: ${client.misc.formatedDate(map.versions[0].createdAt)}\n-=-\n`;
                         mapsUpdated++;
                         data.songs[i].levelid = `custom_level_${map.versions[0].hash}`;
                         data.songs[i].hash = map.versions[0].hash;
+                    }
+                    if (map.deleted === true) {
+                        deleted++;
+                        changelog += `${map.metadata.songAuthorName} - ${map.metadata.songName} by: ${map.metadata.levelAuthorName} \n!!! DELETED !!!\nUploaded: ${client.misc.formatedDate(map.versions[0].createdAt)}\n-=-\n`;
+                        if (args[0] === "clean") {
+                            data.songs.splice(i, 1);
+                        }
                     }
                 }
 
                 const playlistString = JSON.stringify(data, null, 2);
                 const playlistBuffer = Buffer.from(playlistString, "utf-8");
-                const playlist = new Discord.MessageAttachment(playlistBuffer, `${data.playlistTitle}.json`);
+                const changelogBuffer = Buffer.from(changelog, "utf-8");
+                const changeLogAttachtment = new Discord.MessageAttachment(changelogBuffer, `changelog.txt`);
+                const playlistAttachmet = new Discord.MessageAttachment(playlistBuffer, `${data.playlistTitle}.json`);
 
-                await message.channel.send(`Updated your playlist.\nUpdated ${mapsUpdated} maps.\nFailed on ${errored} maps.`, playlist);
+
+                let msg = `Updated your playlist.\nUpdated ${mapsUpdated} maps.`
+                if(errored > 0) msg+= `\nFailed on ${errored} maps.`
+                if(deleted > 0) msg+= `\nFound ${deleted} deleted maps.`
+                if(deleted > 0 && args[0] !== "clean") msg += ` Run this command like this \`${client.config.prefix}playlistupdate clean\` to remove deleted maps.`
+
+                await message.channel.send(msg, [playlistAttachmet, changeLogAttachtment]);
             }
             catch (err) {
                 await message.channel.send("Failed to update this playlist, make sure it is a correct playlist.")
