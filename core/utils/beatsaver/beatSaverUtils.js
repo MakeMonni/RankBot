@@ -48,6 +48,12 @@ class BeatSaverUtils {
                             else if (msgJSON["type"] === 'MAP_DELETE') {
                                 await client.db.collection("beatSaverLocal").updateOne({ key: msgJSON["msg"].toUpperCase() }, { $set: { deleted: true } });
                             }
+                            else {
+                                console.log("unrecognized msg type: ", msgJSON.type)
+                            }
+                        }
+                        else {
+                            console.log("Non utf-8 msg", message);
                         }
                     }
                     catch (err) { console.log(err) }
@@ -195,10 +201,10 @@ class BeatSaverUtils {
     async getMapDataGithub() {
         console.log("Pulling scraped BeatSaver data from github.")
         if (!fs.existsSync('./ScrapeSaverData/')) {
-            fs.mkdir('./ScrapeSaverData/', (err) => { 
-                if(err) return console.error(err); 
-            }, 
-            console.log('Directory ./ScrapeSaverData/ created successfully!') 
+            fs.mkdir('./ScrapeSaverData/', (err) => {
+                if (err) return console.error(err);
+            },
+                console.log('Directory ./ScrapeSaverData/ created successfully!')
             );
         }
         const data = await fetch(`https://github.com/andruzzzhka/BeatSaberScrappedData/raw/master/combinedScrappedData.zip`)
@@ -338,6 +344,21 @@ class BeatSaverUtils {
         const matches = key.match(/^[a-fA-F0-9]+$/);
         if (!matches || key.length > 6) return false;
         else return true;
+    }
+
+    async newestKeyHex() {
+        const query = await this.db.collection("beatSaverLocal").aggregate(
+            [
+                { $project: { key: 1, keyLength: { $strLenCP: "$key" } } },
+                { $sort: { keyLength: -1, key: -1 } },
+                { $limit: 1 }
+            ]
+        ).toArray();
+        return query[0].key;
+    }
+
+    missingHexKeys() {
+        
     }
 }
 module.exports = BeatSaverUtils;
