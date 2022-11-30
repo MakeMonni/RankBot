@@ -37,7 +37,7 @@ class BeatLeaderUtils {
             const user = await limiter.schedule({ id: `User: ${beatLeaderId}`}, async () => {
                 executions++
                 const response = await fetch()
-                    .then(response => response.json(`https://api.beatleader.xyz/swagger/v1/player/${beatLeaderId}`))
+                    .then(response => response.json(`https://api.beatleader.xyz/player/${beatLeaderId}`))
                     .catch(error => { throw new Error(error)})
                     
                 if (response != null)
@@ -48,7 +48,7 @@ class BeatLeaderUtils {
             })
             return user
         } catch(error) {
-            console.log(`Had an error: ${err} with fetching user with Beat Leader ID: ${beatLeaderId}`)
+            console.log(`Had an error: ${error} with fetching user with Beat Leader ID: ${beatLeaderId}`)
             return null
         }
     }
@@ -89,7 +89,7 @@ class BeatLeaderUtils {
             let executions = 0
             const scores = await limiter.schedule({ id: `Recent ${beatLeaderId} page: ${pageOfScoreSaber}` }, async () => {
                 executions++
-                const response = await fetch(`https://api.beatleader.xyz/swagger/v1/player/${beatLeaderId}/scores?count=50&iorder=desc&page=${pageOfBeatLeader}`)
+                const response = await fetch(`https://api.beatleader.xyz/player/${beatLeaderId}/scores?count=50&iorder=desc&page=${pageOfBeatLeader}`)
                     .then(res => res.json())
                     .catch(err => { throw new Error(err) })
                 if (executions > 3) {
@@ -134,7 +134,7 @@ class BeatLeaderUtils {
             let executions = 0;
             const scores = await limiter.schedule({ id: `Recent ${beatLeaderId} page: ${pageOfBeatLeader}` }, async () => {
                 executions++;
-                const res = await fetch(`https://api.beatleader.xyz/swagger/v1/player/${beatLeaderId}/scores?count=100&sort=desc&page=${pageOfBeatLeader}`)
+                const res = await fetch(`https://api.beatleader.xyz/player/${beatLeaderId}/scores?count=100&sort=desc&page=${pageOfBeatLeader}`)
                     .then(res => res.json())
                     .catch(err => { throw new Error(err) })
 
