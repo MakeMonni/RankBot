@@ -7,6 +7,7 @@ const MiscUtils = require("./utils/misc/miscUtils.js");
 const BeatSaviorUtils = require("./utils/beatsavior/beatSaviorUtils.js");
 const TwitchUtils = require("./utils/twitch/twitchUtils.js");
 const ApiUtils = require("./utils/api/apiUtils.js");
+const BeatLeaderUtils = require("./utils/beatleader/beatleaderUtils")
 
 class BotClient extends Client {
     constructor(db, config, commands, options) {
@@ -22,6 +23,7 @@ class BotClient extends Client {
         this.commandHandler.init();
 
         this.scoresaber = new ScoreSaberUtils(db, config, this);
+        this.beatleader = new BeatLeaderUtils(db, config, this)
         this.beatsaver = new BeatSaverUtils(db, this);
         this.misc = new MiscUtils(db, this);
         this.beatsavior = new BeatSaviorUtils(db, this);
