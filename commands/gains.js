@@ -128,7 +128,7 @@ class Gains extends Command {
                     .setTitle(`Your gains`)
                     .setURL(`https://scoresaber.com/u/${user.scId}?page=1&sort=recent`)
                     .setThumbnail(`${userAvatar(message.author.avatarURL())}`)
-                    .addField(`Rank`, `${rankChange} ${Emote(user.rank, scProfile.rank, message)} ${scProfile.rank}`)
+                    .addField(`Rank :globe_with_meridians:`, `${rankChange} ${Emote(user.rank, scProfile.rank, message)} ${scProfile.rank}`)
                     .addField(`PP`, `${ppGained} ${Emote(scProfile.pp, user.pp, message)} ${scProfile.pp}`)
                     .addField(`Country :flag_${scProfile.country.toLowerCase()}:`, `${countryRankChange} ${Emote(user.countryRank, scProfile.countryRank, message)} ${scProfile.countryRank}`)
                     .setFooter(`In the last ${time}.`)
