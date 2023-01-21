@@ -22,8 +22,7 @@ class PlaylistUpdate extends Command {
             let changelog = "";
             let errored = 0;
             let deleted = 0;
-
-            // Add check for duplicate maps here.
+            let hashDiffPairs = [];
 
             try {
                 for (let i = 0; i < data.songs.length; i++) {
@@ -49,6 +48,20 @@ class PlaylistUpdate extends Command {
                             data.songs.splice(i, 1);
                         }
                     }
+                    //Check for duplicate maps
+                    const index = hashDiffPairs.findIndex(pair => pair.hash === data.songs[i].hash && pair.diffs === data.songs[i].difficulties[0].name);
+                    if (index === -1) {
+                        hashDiffPairs.push({
+                            hash: data.songs[i].hash,
+                            diffs: data.songs[i].difficulties[0].name
+                        });
+                    } 
+                    else {
+                        changelog += `${map.metadata.songAuthorName} - ${map.metadata.songName} by: ${map.metadata.levelAuthorName} \n!!! DUPLICATE !!!\n-=-\n`
+                        if (args[0] === "clean") {
+                            data.songs.splice(i, 1);
+                        }
+                    }
                 }
 
                 const playlistString = JSON.stringify(data, null, 2);
@@ -59,12 +72,12 @@ class PlaylistUpdate extends Command {
 
 
                 let msg = `Updated your playlist.\nUpdated ${mapsUpdated} maps.`
-                if(errored > 0) msg+= `\nFailed on ${errored} maps.`
-                if(deleted > 0) msg+= `\nFound ${deleted} deleted maps.`
-                if(deleted > 0 && args[0] !== "clean") msg += ` Run this command like this \`${client.config.prefix}playlistupdate clean\` to remove deleted maps.`
-                
+                if (errored > 0) msg += `\nFailed on ${errored} maps.`
+                if (deleted > 0) msg += `\nFound ${deleted} deleted maps.`
+                if (deleted > 0 && args[0] !== "clean") msg += ` Run this command like this \`${client.config.prefix}playlistupdate clean\` to remove deleted maps.`
+
                 let attachmentArray = [playlistAttachmet]
-                if(changelog.length !== 0) attachmentArray.push(changeLogAttachtment)
+                if (changelog.length !== 0) attachmentArray.push(changeLogAttachtment)
 
                 await message.channel.send(msg, attachmentArray);
             }
