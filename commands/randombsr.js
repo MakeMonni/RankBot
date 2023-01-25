@@ -8,24 +8,20 @@ class Randombsr extends Command {
         let njsString = "||";
         const mapDiffs = map[0].versions[0].diffs;
         let randomDiffIndex = -1;
-        if (args[0] === "diff") {
-            let possibleDiffs = Array.from(Array(mapDiffs.length).keys()); //Array containing all diff indexes
-            let index = Math.floor(Math.random() * possibleDiffs.length);
-            //Loop through possible diffs in random order until one with more than 0 notes is found
-            while (mapDiffs[possibleDiffs[index]].notes === 0 && possibleDiffs.length > 0) {
-                possibleDiffs.splice(index, 1);
-                index = Math.floor(Math.random() * possibleDiffs.length);
-            }
-            if (possibleDiffs.length > 0) randomDiffIndex = possibleDiffs[index];
-        }      
+        let possibleDiffs = mapDiffs.map(x => mapDiffs.indexOf(x));
+        let index = Math.floor(Math.random() * possibleDiffs.length);
+        //Loop through possible diffs in random order until one with more than 0 notes is found
+        while (mapDiffs[possibleDiffs[index]].notes === 0 && possibleDiffs.length > 0) {
+            possibleDiffs.splice(index, 1);
+            index = Math.floor(Math.random() * possibleDiffs.length);
+        }
+        if (possibleDiffs.length > 0) randomDiffIndex = possibleDiffs[index];  
         for (let i = 0; i < mapDiffs.length; i++) {
             njsString += `${mapDiffs[i].characteristic} - ${mapDiffs[i].difficulty} - ${mapDiffs[i].njs}`
             if (i === randomDiffIndex) njsString += `🔹`;
             if (i != mapDiffs.length) njsString += `\n`
         }
-        if (args[0] === "diff" && randomDiffIndex === -1) {
-            njsString += `\n⚠️ No difficulty with more than 0 notes found!`;
-        }
+        if (randomDiffIndex === -1) njsString += `\n⚠️ No difficulty with more than 0 notes found!`;
         njsString += "||"
 
         const mapMinutes = Math.floor(map[0].metadata.duration / 60)
