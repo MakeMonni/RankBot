@@ -7,9 +7,24 @@ class Randombsr extends Command {
 
         let njsString = "||";
         const mapDiffs = map[0].versions[0].diffs;
+        let randomDiffIndex = -1;
+        if (args[0] === "diff") {
+            let possibleDiffs = Array.from(Array(mapDiffs.length).keys()); //Array containing all diff indexes
+            let index = Math.floor(Math.random() * possibleDiffs.length);
+            //Loop through possible diffs in random order until one with more than 0 notes is found
+            while (mapDiffs[possibleDiffs[index]].notes === 0 && possibleDiffs.length > 0) {
+                possibleDiffs.splice(index, 1);
+                index = Math.floor(Math.random() * possibleDiffs.length);
+            }
+            if (possibleDiffs.length > 0) randomDiffIndex = possibleDiffs[index];
+        }      
         for (let i = 0; i < mapDiffs.length; i++) {
-            njsString += `${mapDiffs[i].difficulty} - ${mapDiffs[i].njs}`
+            njsString += `${mapDiffs[i].characteristic} - ${mapDiffs[i].difficulty} - ${mapDiffs[i].njs}`
+            if (i === randomDiffIndex) njsString += `🔹`;
             if (i != mapDiffs.length) njsString += `\n`
+        }
+        if (args[0] === "diff" && randomDiffIndex === -1) {
+            njsString += `\n⚠️ No difficulty with more than 0 notes found!`;
         }
         njsString += "||"
 
@@ -22,7 +37,7 @@ class Randombsr extends Command {
             .addField(`Duration`, `${mapMinutes}:${mapSecond}`)
             .addField(`NJS`, `${njsString}`)
             .addField(`\u200b`, `[Download](${map[0].versions[0].downloadURL}) | [BeatSaver](https://beatsaver.com/maps/${map[0].key.toLowerCase()}) | [Preview](https://skystudioapps.com/bs-viewer/?id=${map[0].key}) | [Mapchecker](https://kivalevan.me/BeatSaber-MapCheck/?id=${map[0].key})`);
-
+        
         await message.channel.send(embed);
     }
 }
