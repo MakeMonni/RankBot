@@ -8,20 +8,16 @@ class Randombsr extends Command {
         let njsString = "||";
         const mapDiffs = map[0].versions[0].diffs;
         let randomDiffIndex = -1;
-        let possibleDiffs = mapDiffs.map(x => mapDiffs.indexOf(x));
-        let index = Math.floor(Math.random() * possibleDiffs.length);
-        //Loop through possible diffs in random order until one with more than 0 notes is found
-        while (mapDiffs[possibleDiffs[index]].notes === 0 && possibleDiffs.length > 0) {
-            possibleDiffs.splice(index, 1);
-            index = Math.floor(Math.random() * possibleDiffs.length);
-        }
-        if (possibleDiffs.length > 0) randomDiffIndex = possibleDiffs[index];  
+        let validDiffs = mapDiffs.map(x => x.notes > 0 ? mapDiffs.indexOf(x) : -1)
+            .filter(x => x !== -1);
+        const index = Math.floor(Math.random() * validDiffs.length);
+        if (validDiffs.length > 0) randomDiffIndex = validDiffs[index];
         for (let i = 0; i < mapDiffs.length; i++) {
             njsString += `${mapDiffs[i].characteristic} - ${mapDiffs[i].difficulty} - ${mapDiffs[i].njs}`
             if (i === randomDiffIndex) njsString += `🔹`;
             if (i != mapDiffs.length) njsString += `\n`
         }
-        if (randomDiffIndex === -1) njsString += `\n⚠️ No difficulty with more than 0 notes found!`;
+        if (randomDiffIndex === -1) njsString += `\n⚠️ No difficulties with more than 0 notes!`;
         njsString += "||"
 
         const mapMinutes = Math.floor(map[0].metadata.duration / 60)
