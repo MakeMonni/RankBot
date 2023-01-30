@@ -21,7 +21,7 @@ class CountryRank extends Command {
         else {
             await client.scoresaber.getRecentScores(playerId);
         }
-        user.name = user.name.replaceAll(' ', '-');
+        user.name = user.name.replace('/ ./g', '-');
         const res = await client.rankbotApi.apiCall(client.config.syncURL + `/countryRank?p=${playerId}&c=${user.country}&r=${rank}&n=${user.name}`);
         const playlistAttach = await client.misc.jsonAttachmentCreator(res, `${user.name}s rank ${rank}s`);
 
