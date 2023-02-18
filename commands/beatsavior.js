@@ -2,6 +2,8 @@ const Command = require("../core/command/command.js");
 
 class BeatSavior extends Command {
     async run(client, message, args) {
+        await message.channel.send("This command is deprecated and should be removed...")
+        return;
         const user = await client.db.collection("discordRankBotUsers").findOne({ discId: message.author.id });
         if (!user) {
             await message.channel.send(`You are not a registered user. Use \`${client.config.prefix}addme\` first.`);
