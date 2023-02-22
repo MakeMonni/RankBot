@@ -46,6 +46,11 @@ class Snipelist extends Command {
                 return;
             }
 
+            if (user.scId === targetUserScId) {
+                await message.channel.send("Targeting yourself is not allowed.");
+                return;
+            }
+
             const botmsg = await message.channel.send("Gathering and comparing scores, this might take a moment.");
             const scoresFromUser = await client.db.collection("discordRankBotScores").find({ player: user.scId }).count();
 
