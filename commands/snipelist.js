@@ -46,6 +46,11 @@ class Snipelist extends Command {
                 return;
             }
 
+            if (user.scId === targetUserScId) {
+                await message.channel.send("Targeting yourself is not allowed.");
+                return;
+            }
+
             const botmsg = await message.channel.send("Gathering and comparing scores, this might take a moment.");
             const scoresFromUser = await client.db.collection("discordRankBotScores").find({ player: user.scId }).count();
 
@@ -64,67 +69,33 @@ class Snipelist extends Command {
                 await client.scoresaber.getRecentScores(targetUserScId);
             }
 
-            let snipeScoreHashes = [];
-            let unplayedScoreHashes = [];
-            let targetQuery = { player: targetUserScId };
-            let userQuery = { player: user.scId };
             let category = null;
             userName = userName.replace(" ", "_")
 
             if (args[1] === "ranked") {
                 category = "ranked";
-                targetQuery.ranked = true;
-                userQuery.ranked = true;
             }
             else if (args[1] === "unranked") {
                 category = "unranked";
-                targetQuery.ranked = false;
-                userQuery.ranked = false;
-            }
-
-            const targetScores = await client.db.collection("discordRankBotScores").find(targetQuery).sort({ date: -1 }).toArray();
-            const userScores = await client.db.collection("discordRankBotScores").find(userQuery).sort({ date: -1 }).toArray();
-
-            for (let i = 0; i < targetScores.length; i++) {
-                const scoreIndex = userScores.findIndex(e => e.leaderboardId === targetScores[i].leaderboardId);
-
-                const songHash = {
-                    hash: targetScores[i].hash,
-                    difficulties: [
-                        {
-                            characteristic: client.beatsaver.findPlayCategory(targetScores[i].diff),
-                            name: client.beatsaver.convertDiffNameBeatSaver(targetScores[i].diff)
-                        }
-                    ]
-                }
-
-                if (scoreIndex === -1) {
-                    unplayedScoreHashes.push(songHash);
-                }
-                else if (userScores[scoreIndex].score < targetScores[i].score) {
-                    snipeScoreHashes.push(songHash);
-                }
-
-            }
-            if (snipeScoreHashes.length == 0) {
-                botmsg.delete();
-                await message.channel.send(`${message.author} there was no scores to be sniped.`);
-                return;
             }
 
             let syncURL = `${client.config.syncURL}/snipe?p=${user.scId}&t=${targetUserScId}&c=${category}&n=${userName}`
-            let scoresToSnipe;
-
             if (args[2] === `unplayed`) {
-                scoresToSnipe = unplayedScoreHashes;
                 syncURL+=`&u=true`
             }
-            else scoresToSnipe = snipeScoreHashes;
 
+            const res = await client.rankbotApi.apiCall(syncURL);
+            const attachment = await client.misc.jsonAttachmentCreator(res, `Sniping_${userName}`);
 
-            const playlistAttachment = await client.misc.createPlaylist(`Sniping_${userName}`, scoresToSnipe, "https://cdn.discordapp.com/attachments/840144337231806484/893593688373084210/unknown.png", syncURL, `Gl with your snipes against ${userName}!`);
             botmsg.delete();
-            await message.channel.send(`${message.author}, here is your playlist. Get sniping.\nIt has ${scoresToSnipe.length} maps.`, playlistAttachment);
+            let msgString;
+            if (res.songs.length > 0) {
+                msgString = `${message.author}, here is your playlist. Get sniping.\nIt has ${res.songs.length} maps.`;
+            }
+            else {
+                msgString = `${message.author}, here is your playlist. There are no scores to be sniped ... yet.`;
+            }
+            await message.channel.send(msgString, attachment);
         }
     }
 }
