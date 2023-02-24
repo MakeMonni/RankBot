@@ -113,6 +113,12 @@ class Fix extends Command {
                 console.log(maps.length);
                 await message.channel.send(`Changed ${changedMapCount} date formats.`)
             }
+            if( args[0] === "scorehandler")
+            {
+                await message.channel.send("Starting");
+                await client.scoresaber.scorePrehandler()
+                await message.channel.send("Done")
+            }
             else {
                 return;
                 const maps = await client.db.collection("beatSaverLocal").find({ "versions.diffs.me": { $exists: false } }).toArray();
