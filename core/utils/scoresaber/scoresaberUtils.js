@@ -417,7 +417,7 @@ class ScoreSaberUtils {
             if (!handledIds.includes(scores[i].leaderboardId)) {
                 const mapScores = await this.client.db.collection("beatSaverLocal").find({ leaderboardId: scores[i].leaderboardId, maxscore: { $gt: 1 } }).toArray();
                 if (mapScores.length < 0) {
-                    await this.client.db.collection("discordRankBotScores").updateMany({ leaderboardId: scores[i].leaderboardId }, { $set: { maxscore: mapScores[0].maxscore } });
+                    this.client.db.collection("discordRankBotScores").updateMany({ leaderboardId: scores[i].leaderboardId }, { $set: { maxscore: mapScores[0].maxscore } });
                     handledIds.push(scores[i].leaderboardId);
                 }
                 else {
@@ -426,12 +426,12 @@ class ScoreSaberUtils {
                         const versionIndex = map.versions.findIndex(versions => versions.hash === scores[i].hash);
                         const difficultyData = map.versions[versionIndex].diffs.find(e => e.characteristic === this.client.beatsaver.findPlayCategory(scores[i].diff) && e.difficulty === this.client.beatsaver.convertDiffNameBeatSaver(scores[i].diff));
                         const maxScore = await this.calculateMaxScore(difficultyData.notes);
-                        await this.client.db.collection("discordRankBotScores").updateMany({ leaderboardId: scores[i].leaderboardId }, { $set: { maxscore: maxScore } });
+                        this.client.db.collection("discordRankBotScores").updateMany({ leaderboardId: scores[i].leaderboardId }, { $set: { maxscore: maxScore } });
                         handledIds.push(scores[i].leaderboardId);
                     }
                     catch(ex) {
                         console.log("Unable to find map for leaderboard id: ", scores[i].leaderboardId, ex);
-                        await this.client.db.collection("discordRankBotScores").updateMany({ leaderboardId: scores[i].leaderboardId }, { $set: { maxscore: -1 } });
+                        this.client.db.collection("discordRankBotScores").updateMany({ leaderboardId: scores[i].leaderboardId }, { $set: { maxscore: -1 } });
                         handledIds.push(scores[i].leaderboardId);
                     }
                 }
