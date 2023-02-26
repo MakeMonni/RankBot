@@ -108,35 +108,52 @@ class Fix extends Command {
                             changedMapCount++
                         }
                     }
-                    await client.db.collection("beatSaverLocal").updateOne({key: map.key}, {$set: map});
+                    await client.db.collection("beatSaverLocal").updateOne({ key: map.key }, { $set: map });
                 }
                 console.log(maps.length);
                 await message.channel.send(`Changed ${changedMapCount} date formats.`)
             }
-            if( args[0] === "scorehandler")
-            {
+            if (args[0] === "scorehandler") {
                 await message.channel.send("Starting");
-                await client.scoresaber.scorePrehandler()
-                await message.channel.send("Done")
+                await client.scoresaber.scorePrehandler();
+                await message.channel.send("Done");
             }
             else {
-                return;
+                return // Data is currently inconsitent when difficulties are wrongly reported as other difficulties
+                await message.channel.send("Starting");
                 const maps = await client.db.collection("beatSaverLocal").find({ "versions.diffs.me": { $exists: false } }).toArray();
-                console.time()
+                let bulkWrite = [];
+                console.time();
                 const promises = [];
-                for (let i = 0; i < maps.length; i++) {
-                    promises.push(
-                        hashSearchLimiter.schedule(async () => fetch(`https://beatsaber.tskoll.com/api/v1/hash/${maps[i].versions[0].hash}`)
-                            .then(res => res.json()))
-                            .then(res => {
+                //for (let i = 0; i < maps.length; i++) {
+                promises.push(
+                    //hashSearchLimiter.schedule(async () => fetch(`https://beatsaber.tskoll.com/api/v1/hash/${maps[i].versions[0].hash}`)
+                    hashSearchLimiter.schedule(async () => fetch(`https://beatsaber.tskoll.com/api/v1/hash/0BC46ADF42CEAEB9B25F59A093A59A4D4F111DC3`)
+                        .then(res => res.json()))
+                        .then(res => {
+                            for (let j = 0; j < res.difficulties.length; j++) {
+                                const ne = (res.difficulties[j].mods & 0b0001) != 0;
+                                const me = (res.difficulties[j].mods & 0b0010) != 0;
+                                const chroma = (res.difficulties[j].mods & 0b0100) != 0;
+                                const cinema = (res.difficulties[j].mods & 0b1000) != 0;
+                                if (res.difficulties[j].characteristicHuman === "Custom") res.difficulties[j].characteristicHuman = "Standard";
+                                console.log(res.difficulties[j].difficultyHuman)
 
-                                //client.db.collection("beatSaverLocal").updateOne({ "versions.hash": res.hash }, { $set: { me: 1, ne: 2, cinema: 3 } })
-                            })
-                            .catch(err => console.log(maps[i].versions[0].hash)))
-
-                }
+                                bulkWrite.push(
+                                    {
+                                        updateOne: {
+                                            "filter": { "versions.hash": res.hash },
+                                            "update": { $set: { "versions.$[diff]": { me: me, ne: ne, cinema: cinema, chroma: chroma } } },
+                                            "arrayFilters": [{ diff: res.difficulties[j].difficultyHuman /*, diff: res.difficulties[j].characteristicHuman */ }]
+                                        }
+                                    }
+                                )
+                            }
+                        })
+                        .catch(err => console.log(maps[i].versions[0].hash)))
+                //}
                 await Promise.all(promises);
-                console.log(promises);
+                client.db.collection("beatSaverLocal").bulkWrite(bulkWrite);
                 console.timeEnd()
 
                 //1 = ne
