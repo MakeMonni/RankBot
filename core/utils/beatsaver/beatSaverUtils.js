@@ -129,6 +129,18 @@ class BeatSaverUtils {
         return map;
     }
 
+    async bulkFindMapsByHash(arrayOfHash) {
+        // TODO
+
+        arrayOfHash = arrayOfHash.map(e => e.toUpperCase());
+        let maps = await this.db.collection("beatSaverLocal").find({ versions: { $elemMatch: { hash: { $in: arrayOfHash } } } })
+
+        // How to solve missing maps as they are not returned?
+        // Compare arrayOfHash[i] to maps[i] and if it does not match fill in that spot with  
+        // Use getMapDataByHash if not found?
+        // If not actually found insert empty element into array on that spot?
+    }
+
     async findMapByKey(key) {
         let map = await this.db.collection("beatSaverLocal").findOne({ key: key.toUpperCase() });
         if (map?.notFound) {
@@ -148,6 +160,18 @@ class BeatSaverUtils {
             }
         }
         return map;
+    }
+
+    async bulkFindMapsByKey(arrayOfKeys) {
+        // TODO
+
+        arrayOfKeys = arrayOfKeys.map(e => e.toUpperCase());
+        let maps = await this.db.collection("beatSaverLocal").find({ key: { $in: arrayOfKeys } })
+
+        // How to solve missing maps as they are not returned?
+        // Compare arrayOfHash[i] to maps[i] and if it does not match fill in that spot with  
+        // Use getMapDataByHash if not found?
+        // If not actually found insert empty element into array on that spot?
     }
 
     async checkMapStatus(res, finder) {
@@ -358,7 +382,7 @@ class BeatSaverUtils {
     }
 
     missingHexKeys() {
-        
+
     }
 }
 module.exports = BeatSaverUtils;
