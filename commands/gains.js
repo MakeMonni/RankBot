@@ -21,7 +21,6 @@ class Gains extends Command {
                     return;
                 }
 
-
                 const newScores = await client.db.collection("discordRankBotScores").find({ player: user.scId, gained: false }).toArray();
 
                 let countOfBeatsavior = 0;
@@ -38,7 +37,8 @@ class Gains extends Command {
                     let map;
                     let mapErrored = false;
 
-                    try { map = await client.beatsaver.findMapByHash(newScores[i].hash); } catch (err) {
+                    try { 
+                        map = await client.beatsaver.findMapByHash(newScores[i].hash); } catch (err) {
                         console.log("Map errored:\n" + err + "Hash: " + newScores[i].hash)
                         mapErrored = true;
                     };
@@ -109,8 +109,6 @@ class Gains extends Command {
 
                 const scProfile = await client.scoresaber.getUser(user.scId);
 
-                await updateUserInfo(scProfile, message, client);
-
                 const ppGained = Math.round((scProfile.pp - user.pp) * 100) / 100;
                 const rankChange = user.rank - scProfile.rank;
                 const countryRankChange = user.countryRank - scProfile.countryRank;
@@ -134,7 +132,7 @@ class Gains extends Command {
                     .setFooter(`In the last ${time}.`)
 
                 if (newScores.length > 0) {
-                    if(message.author.id === '232564229763235841'){
+                    if (message.author.id === '232564229763235841') {
                         embed.addField(`Children sold`, `You have sold a total of 1 child.`);
                     }
                     embed.addField(`Playinfo`, `You played ${newScores.length} maps. \nDuration: ${lengthString}.`);
@@ -142,7 +140,8 @@ class Gains extends Command {
                     if (averageAccuracyLeft > 0) {
                         embed.addField(`Beatsavior (${countOfBeatsavior})`, `TD: ${averageTdLeft} | ${averageTdRight}\nAcc: ${averageAccuracyLeft} | ${averageAccuracyRight}\nFC acc: ${fcAcc}%`)
                     }
-                } else {
+                }
+                else {
                     embed.addField(`Playinfo`, `No maps played.`)
                 }
                 if (erroredMaps > 0) {
@@ -151,14 +150,15 @@ class Gains extends Command {
                 try {
                     await botMessage.edit("", embed);
                     client.db.collection("discordRankBotScores").updateMany({ player: user.scId, gained: false }, { $set: { gained: true } })
-
+                    await updateUserInfo(scProfile, message, client);
                 }
                 catch (err) {
                     await message.channel.send("Could not send embed, try again")
                     console.log(err);
                 }
 
-            } else {
+            }
+            else {
                 let msg = "Setting up your gains for the first time, this will take a while depending on your playcount.\nYou will be pinged once done."
                 if (limiter.jobs("EXECUTING").length > 0) msg += " You have been queued."
                 message.channel.send(msg);
