@@ -14,6 +14,7 @@ class BeatSaviorUtils {
         this.client = client;
     }
 
+    // Deprecating this as BeatSavior is not fully functional and is not getting updated to fix those issues, moving to beatleader to fetch the relevant data
     async getRecentPlays(scoreSaberID, setup) {
         const userWithBeatSavior = await this.db.collection("discordRankBotUsers").findOne({ scId: scoreSaberID, beatsavior: true });
         if (userWithBeatSavior == null && setup == false) {

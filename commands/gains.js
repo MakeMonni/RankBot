@@ -37,8 +37,12 @@ class Gains extends Command {
                     let map;
                     let mapErrored = false;
 
-                    try { 
-                        map = await client.beatsaver.findMapByHash(newScores[i].hash); } catch (err) {
+                    try {
+                        // Instead of finding maps one by one, use client.beatSaver.bulkFindMapsByHash
+                        // Nonexisting maps should be returned as empty objects in the array
+                        // This should improve performance 
+                        map = await client.beatsaver.findMapByHash(newScores[i].hash);
+                    } catch (err) {
                         console.log("Map errored:\n" + err + "Hash: " + newScores[i].hash)
                         mapErrored = true;
                     };
@@ -69,7 +73,9 @@ class Gains extends Command {
 
                         // FIX 
                         // Spaghetti here
-
+                        // Instead of searching the score from db it's most likely faster to just calculate it since we have the map in memory already
+                        // Updating others can be done without awaits / skipped because it's timed in scorePreHander
+                        // This should improve performance 
                         if (newScores[i].maxscore === 0) {
                             let mapScores = await client.db.collection("beatSaverLocal").find({ leaderboardId: newScores[i].leaderboardId, maxscore: { $gt: 1 } }).toArray();
 

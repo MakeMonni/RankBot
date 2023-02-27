@@ -444,7 +444,7 @@ class ScoreSaberUtils {
                         handledIds.push(scores[i].leaderboardId);
                     }
                     catch (ex) {
-                        console.log("Unable to find map for leaderboard id: ", scores[i].leaderboardId, ex);
+                        console.log("Unable to find map for leaderboard id:", scores[i].leaderboardId, ex);
 
                         bulkWrite.push({
                             updateMany: {
