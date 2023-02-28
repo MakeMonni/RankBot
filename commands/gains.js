@@ -8,6 +8,7 @@ const limiter = new Bottleneck({
 
 class Gains extends Command {
     async run(client, message, args) {
+        console.time()
         const user = await client.db.collection("discordRankBotUsers").findOne({ discId: message.author.id });
         if (user !== null) {
             const gainedScoresFromUser = await client.db.collection("discordRankBotScores").find({ player: user.scId, gained: true }).count();
@@ -21,8 +22,6 @@ class Gains extends Command {
                     return;
                 }
 
-                const newScores = await client.db.collection("discordRankBotScores").find({ player: user.scId, gained: false }).toArray();
-
                 let countOfBeatsavior = 0;
                 let erroredMaps = 0;
                 let totalLength = 0;
@@ -33,19 +32,13 @@ class Gains extends Command {
                 let tdLeft = 0;
                 let tdRight = 0;
 
+                const newScores = await client.db.collection("discordRankBotScores").find({ player: user.scId, gained: false }).toArray();
+                const hashArr = newScores.map(x => x.hash);
+                const maps = await client.beatsaver.bulkFindMapsByHash(hashArr);
+                
                 for (let i = 0; i < newScores.length; i++) {
-                    let map;
+                    const map = maps.find(e => e?.versions.find(x => x?.hash === newScores[i].hash))
                     let mapErrored = false;
-
-                    try {
-                        // Instead of finding maps one by one, use client.beatSaver.bulkFindMapsByHash
-                        // Nonexisting maps should be returned as empty objects in the array
-                        // This should improve performance 
-                        map = await client.beatsaver.findMapByHash(newScores[i].hash);
-                    } catch (err) {
-                        console.log("Map errored:\n" + err + "Hash: " + newScores[i].hash)
-                        mapErrored = true;
-                    };
 
                     if (map === undefined || map === null) {
                         mapErrored = true;
@@ -55,14 +48,14 @@ class Gains extends Command {
                     if (!mapErrored) {
                         const versionIndex = map.versions.findIndex(versions => versions.hash === newScores[i].hash)
                         if (versionIndex == -1) {
-                            console.log(newScores[i].hash)
+                            console.log("Did not find versionIndex for:", newScores[i].hash)
                             erroredMaps++;
                             continue;
                         }
                         const difficultyData = map.versions[versionIndex].diffs.find(e => e.characteristic === client.beatsaver.findPlayCategory(newScores[i].diff) && e.difficulty === client.beatsaver.convertDiffNameBeatSaver(newScores[i].diff));
 
                         if (!difficultyData) {
-                            console.log(newScores[i].hash)
+                            console.log("Did not find versionIndex for:", newScores[i].hash)
                             erroredMaps++;
                             continue;
                         }
@@ -71,26 +64,8 @@ class Gains extends Command {
 
                         totalNotes = totalNotes + +mapTotalNotes;
 
-                        // FIX 
-                        // Spaghetti here
-                        // Instead of searching the score from db it's most likely faster to just calculate it since we have the map in memory already
-                        // Updating others can be done without awaits / skipped because it's timed in scorePreHander
-                        // This should improve performance 
                         if (newScores[i].maxscore === 0) {
-                            let mapScores = await client.db.collection("beatSaverLocal").find({ leaderboardId: newScores[i].leaderboardId, maxscore: { $gt: 1 } }).toArray();
-
-                            if (mapScores.length === 0) {
-                                newScores[i].maxscore = await client.scoresaber.calculateMaxScore(mapTotalNotes);
-                                await client.db.collection("discordRankBotScores").updateMany({ leaderboardId: newScores[i].leaderboardId }, { $set: { maxscore: newScores[i].maxscore } });
-                            }
-                            else if (mapScores[0].maxscore != 0) {
-                                newScores[i].maxscore = mapScores[0].maxscore;
-                                await client.db.collection("discordRankBotScores").updateMany({ leaderboardId: newScores[i].leaderboardId }, { $set: { maxscore: newScores[i].maxscore } });
-                            }
-                            else {
-                                newScores[i].maxscore = await client.scoresaber.calculateMaxScore(mapTotalNotes);
-                                await client.db.collection("discordRankBotScores").updateMany({ leaderboardId: newScores[i].leaderboardId }, { $set: { maxscore: newScores[i].maxscore } });
-                            }
+                            newScores[i].maxscore = await client.scoresaber.calculateMaxScore(mapTotalNotes);
                         }
 
                         if (newScores[i].maxscore < newScores[i].score) {
@@ -155,6 +130,7 @@ class Gains extends Command {
                 }
                 try {
                     await botMessage.edit("", embed);
+                    console.timeEnd()
                     client.db.collection("discordRankBotScores").updateMany({ player: user.scId, gained: false }, { $set: { gained: true } })
                     await updateUserInfo(scProfile, message, client);
                 }
