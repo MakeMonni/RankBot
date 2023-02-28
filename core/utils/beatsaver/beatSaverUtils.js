@@ -130,15 +130,29 @@ class BeatSaverUtils {
     }
 
     async bulkFindMapsByHash(arrayOfHash) {
-        // TODO
-
-        arrayOfHash = arrayOfHash.map(e => e.toUpperCase());
-        let maps = await this.db.collection("beatSaverLocal").find({ versions: { $elemMatch: { hash: { $in: arrayOfHash } } } })
-
-        // How to solve missing maps as they are not returned?
-        // Compare arrayOfHash[i] to maps[i] and if it does not match fill in that spot with  
-        // Use getMapDataByHash if not found?
-        // If not actually found insert empty element into array on that spot?
+        arrayOfHash = arrayOfHash.map(e => e.toUpperCase()); // Uppercase everything
+        arrayOfHash = [...new Set(arrayOfHash)] // Remove duplicates
+        let maps = [];
+        const batches = this.batcher(arrayOfHash, 100) // Use the batcher function to split the array into smaller batches
+        for (let i = 0; i < batches.length; i++) {
+            const currentBatch = batches[i]
+            let batchMaps = await this.db.collection("beatSaverLocal").find({ "versions.hash": { $in: currentBatch } }).toArray()
+            await Promise.all(
+                // We need to Promise all otherwise we get issues with Promises that are generated inside
+                currentBatch.map(async (e, j) => {
+                    // We need to find out if every hash in currentBatch was included in the batchMaps 
+                    // otherwise we try to fetch it with getMapDataByHash
+                    if (batchMaps.findIndex(x => x.versions.find(y => y.hash === e)) === -1) {
+                        const tmpMap = await this.getMapDataByHash(e);
+                        // Add a null into the array if not found for easier error management
+                        if (tmpMap === null) batchMaps.splice(j, 0, null); 
+                        else batchMaps.splice(j, 0, tmpMap); // Otherwise we add the map into the array
+                    }
+                })
+            )
+            maps.push(...batchMaps);
+        }
+        return maps;
     }
 
     async findMapByKey(key) {
@@ -205,7 +219,7 @@ class BeatSaverUtils {
     }
 
     async getMapDataByHash(hash) {
-        console.log("Getting data from BeatSaver instead of DB.");
+        console.log("Getting data from BeatSaver instead of DB:", hash);
 
         let mapData = await BeatSaverLimiter.schedule(async () => fetch(`https://api.beatsaver.com/maps/hash/${hash}`, options)
             .then(res => this.checkMapStatus(res, hash))
@@ -384,5 +398,7 @@ class BeatSaverUtils {
     missingHexKeys() {
 
     }
+
+    batcher = (arr, size) => arr.length > size ? [arr.slice(0, size), ...this.batcher(arr.slice(size), size)] : [arr];
 }
 module.exports = BeatSaverUtils;
