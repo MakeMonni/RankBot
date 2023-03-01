@@ -8,7 +8,6 @@ const limiter = new Bottleneck({
 
 class Gains extends Command {
     async run(client, message, args) {
-        console.time()
         const user = await client.db.collection("discordRankBotUsers").findOne({ discId: message.author.id });
         if (user !== null) {
             const gainedScoresFromUser = await client.db.collection("discordRankBotScores").find({ player: user.scId, gained: true }).count();
@@ -130,7 +129,6 @@ class Gains extends Command {
                 }
                 try {
                     await botMessage.edit("", embed);
-                    console.timeEnd()
                     client.db.collection("discordRankBotScores").updateMany({ player: user.scId, gained: false }, { $set: { gained: true } })
                     await updateUserInfo(scProfile, message, client);
                 }
