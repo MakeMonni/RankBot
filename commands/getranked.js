@@ -5,15 +5,18 @@ class GetRanked extends Command {
     async run(client, message, args) {
         if (client.checkIfOwner(message)) {
             console.log(`Requesting ranked maps.`);
-            const newMaps = await client.scoresaber.returnRankedMaps();
+            const maps = await client.scoresaber.returnRankedMaps();
 
-            //Use this to test
-            //const newMaps = await client.db.collection("scoresaberRankedMaps").find().toArray();
-
-            if (!newMaps) {
-                await message.channel.send("No new maps.");
+            if (!maps) {
+                await message.channel.send("Sorry, no new maps & no changes to existing ones.")
                 return;
             }
+
+            //Use this to test embeds
+            //const newMaps = await client.db.collection("scoresaberRankedMaps").find().toArray();
+            const newMaps = maps.newMaps;
+            const starChange = maps.starChange;
+
             let scoresToPpCheck = [];
 
             for (let i = 0; i < newMaps.length; i++) {
@@ -54,7 +57,7 @@ class GetRanked extends Command {
                         if (!map[0].mapper) map[0].mapper = "unknown mapper";
 
                         const embed = new Discord.MessageEmbed()
-                            .setAuthor(`${map[0].name} ${map[0].subName} - ${map[0].songAuthor}`, `https://new.scoresaber.com/apple-touch-icon.46c6173b.png`, `https://scoresaber.com/leaderboard/${map[0].id}`)
+                            .setAuthor(`${map[0].name} ${map[0].subName} - ${map[0].songAuthor}`, `https://scoresaber.com/images/logo.svg`, `https://scoresaber.com/leaderboard/${map[0].id}`)
                             .setThumbnail(`${mapData.versions[0].coverURL}`)
                             .addField(`Mapper`, `${map[0].mapper}`)
                             .addFields({ name: `BPM`, value: `${mapData.metadata.bpm}`, inline: true }, { name: `Length`, value: `${minutes}:${seconds}`, inline: true })
@@ -71,6 +74,40 @@ class GetRanked extends Command {
                         await message.channel.send(embed);
                     }
                 }
+                let changelog = "The following maps had their rating changed"
+                let processedHashes = [];
+                for (let i = 0; i < starChange.length; i++) {
+                    let map = [];
+                    if (!processedHashes.includes(starChange[i].hash)) {
+                        for (let j = 0; j < starChange.length; j++) {
+                            if (starChange[i].hash === starChange[j].hash) {
+                                map.push(starChange[j])
+                                processedHashes.push(starChange[i].hash);
+                            }
+                        }
+                        map.sort(function (a, b) {
+                            return b.stars - a.stars;
+                        });
+
+                        changelog += "\n\n-=-\n\n"
+                        changelog += `${map[0].name} - ${map[0].songAuthor} by ${map[0].mapper}`;
+
+                        for (let j = 0; j < map.length; j++) {
+                            const diffName = client.beatsaver.convertDiffNameVisual(map[j].diff);
+                            const oldStar = map[j].oldStar.toFixed(2).toString();
+                            const newStar = map[j].stars.toFixed(2).toString();
+                            changelog += `\n   ${diffName + ` `.repeat(10 - diffName.length)} ${oldStar + ` `.repeat(7 - oldStar.length)} > ${` `.repeat(7 - newStar.length) + newStar}`
+                        }
+                    }
+                }
+                if (starChange.length > 0) {
+                    const attachment = await client.misc.txtAttachmentCreator(changelog, "reweightlog");
+                    await message.channel.send(`Changelog of changed star values for ranked maps`, attachment);
+                }
+                else {
+                    await message.channel.send("No star ratings reweighted")
+                }
+
             }
 
             let uniquePlayer = []

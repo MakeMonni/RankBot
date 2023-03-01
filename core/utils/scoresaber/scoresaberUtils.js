@@ -311,6 +311,7 @@ class ScoreSaberUtils {
         const currentMaps = await this.client.db.collection("scoresaberRankedMaps").find().toArray();
         console.log("Current maps:", currentMaps.length);
         let newMaps = [];
+        let starChange = [];
         const ignoredMaps = this.config.deletedRankedMaps;
         let mapcounter = 0;
         let page = 0;
@@ -332,30 +333,38 @@ class ScoreSaberUtils {
                     }
                     for (let i = 0; i < res.leaderboards.length; i++) {
                         mapcounter++;
-                        if (!currentMaps.some(e => e.hash === res.leaderboards[i].songHash.toUpperCase() && e.diff === res.leaderboards[i].difficulty.difficultyRaw)) {
-                            const map = res.leaderboards[i]
+                        const map = res.leaderboards[i];
 
+                        let mapObject = {
+                            id: map.id,
+                            hash: map.songHash.toUpperCase(),
+                            name: map.songName,
+                            subName: map.songSubName,
+                            songAuthor: map.songAuthorName,
+                            mapper: map.levelAuthorName,
+                            diff: map.difficulty.difficultyRaw,
+                            difficultyIdentifier: map.difficulty.difficulty,
+                            stars: map.stars,
+                            ranked: map.ranked,
+                            createdDate: new Date(map.createdDate).getTime(),
+                            rankedDate: new Date(map.rankedDate).getTime()
+                        }
+
+                        if (!currentMaps.some(e => e.hash === res.leaderboards[i].songHash.toUpperCase() && e.diff === res.leaderboards[i].difficulty.difficultyRaw)) {
                             if (newMaps.some(e => e.id === map.id)) {
                                 console.log("Dupe map");
                             }
                             else if (!ignoredMaps.includes(map.id)) {
-                                const mapObject = {
-                                    id: map.id,
-                                    hash: map.songHash.toUpperCase(),
-                                    name: map.songName,
-                                    subName: map.songSubName,
-                                    songAuthor: map.songAuthorName,
-                                    mapper: map.levelAuthorName,
-                                    diff: map.difficulty.difficultyRaw,
-                                    difficultyIdentifier: map.difficulty.difficulty,
-                                    stars: map.stars,
-                                    ranked: map.ranked,
-                                    createdDate: new Date(map.createdDate).getTime(),
-                                    rankedDate: new Date(map.rankedDate).getTime()
-                                };
                                 newMaps.push(mapObject);
                             }
+
                             else console.warn("Ignored map detected.");
+                        }
+                        else if (currentMaps.some(e => e.hash === res.leaderboards[i].songHash.toUpperCase() && e.diff === res.leaderboards[i].difficulty.difficultyRaw && e.stars !== res.leaderboards[i].stars)) {
+                            const oldMap = currentMaps.find(e => e.hash === res.leaderboards[i].songHash.toUpperCase() && e.diff === res.leaderboards[i].difficulty.difficultyRaw)
+
+                            mapObject.oldStar = oldMap.stars;
+                            starChange.push(mapObject);
                         }
                     }
                 }
@@ -363,22 +372,37 @@ class ScoreSaberUtils {
             page++;
         }
         console.log("Maps in response:", mapcounter);
-        if (newMaps.length > 0) {
-            let response = await this.db.collection("scoresaberRankedMaps").insertMany(newMaps);
-            console.log(`Inserted ${response.insertedCount} new maps.`)
-            return newMaps;
+        if (newMaps.length > 0 || starChange.length > 0) {
+            if (newMaps.length > 0) {
+                const newCount = await this.db.collection("scoresaberRankedMaps").insertMany(newMaps);
+                console.log(`Inserted ${newCount.insertedCount} new maps.`);
+            }
+            if (starChange.length > 0) {
+                const bulkUpdate = starChange.map(e => {
+                    return {
+                        updateOne: {
+                            "filter": { hash: e.hash, difficultyIdentifier: e.difficultyIdentifier },
+                            "update": { $set: { stars: e.stars } }
+                        }
+                    }
+                })
+                console.log(bulkUpdate[0])
+                const changeCount = await this.db.collection("scoresaberRankedMaps").bulkWrite(bulkUpdate);
+                console.log(changeCount)
+                console.log(`Modified ${changeCount.modifiedCount} maps.`);
+            }
+
+            return { newMaps: newMaps, starChange: starChange };
         }
         else return;
     }
 
-    //TODO: Update
     async scoreTracker() {
         const users = await this.db.collection("discordRankBotScores").distinct("player");
         let usersUpdated = 0;
         for (let i = 0; i < users.length; i++) {
             const latestScore = await this.db.collection("discordRankBotScores").find({ player: users[i] }).sort({ date: -1 }).limit(1).toArray();
             if (latestScore[0].date < (Date.now() - 86400000)) {
-                //Add check here with apicheck with 1 score, if it's not the same as the most recent in db, do the recent search
                 await this.getRecentScores(users[i]);
                 usersUpdated++;
             }
