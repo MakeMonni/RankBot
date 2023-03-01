@@ -46,6 +46,11 @@ class MiscUtils {
         return new Discord.MessageAttachment(buffer, `${name}.json`);
     }
 
+    async txtAttachmentCreator(string, name) {
+        const buffer = Buffer.from(string, "utf-8");
+        return new Discord.MessageAttachment(buffer, `${name}.txt`);
+    }
+
     //https://discordjs.guide/miscellaneous/parsing-mention-arguments.html#using-regular-expressions
     async getUserFromMention(mention) {
         // The id is the first and only match found by the RegEx.
