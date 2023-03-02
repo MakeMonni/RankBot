@@ -30,6 +30,7 @@ class Gains extends Command {
                 let totalRightAcc = 0;
                 let tdLeft = 0;
                 let tdRight = 0;
+                let totalPauses = 0;
 
                 const newScores = await client.db.collection("discordRankBotScores").find({ player: user.scId, gained: false }).toArray();
                 const hashArr = newScores.map(x => x.hash);
@@ -77,6 +78,7 @@ class Gains extends Command {
 
                         if (newScores[i].beatsavior) {
                             countOfBeatsavior++;
+                            if(newScores[i].beatsavior.trackers.winTracker.nbOfPause > 0) totalPauses+= +newScores[i].beatsavior.trackers.winTracker.nbOfPause
                             const accTracker = newScores[i].beatsavior.trackers.accuracyTracker
                             isFinite(accTracker.accLeft) ? totalLeftAcc += accTracker.accLeft : totalLeftAcc += 115
                             isFinite(accTracker.accRight) ? totalRightAcc += accTracker.accRight : totalRightAcc += 115
@@ -118,7 +120,7 @@ class Gains extends Command {
                     embed.addField(`Playinfo`, `You played ${newScores.length} maps. \nDuration: ${lengthString}.`);
                     embed.addField(`Averages`, `NPS: ${averageNPS} | Acc: ${averageAccuracyMaps}`);
                     if (averageAccuracyLeft > 0) {
-                        embed.addField(`Beatsavior (${countOfBeatsavior})`, `TD: ${averageTdLeft} | ${averageTdRight}\nAcc: ${averageAccuracyLeft} | ${averageAccuracyRight}\nFC acc: ${fcAcc}%`)
+                        embed.addField(`Beatsavior (${countOfBeatsavior})`, `TD: ${averageTdLeft} | ${averageTdRight}\nAcc: ${averageAccuracyLeft} | ${averageAccuracyRight}\nFC acc: ${fcAcc}% Pauses: ${totalPauses}`)
                     }
                 }
                 else {
