@@ -41,6 +41,7 @@ MongoClient.connect(config.mongourl, async (err, client) => {
     }
 
     await db.collection("discordRankBotScores").createIndex({ hash: 1, player: 1, leaderboardId: 1 });
+    await db.collection("discordRankBotScores").createIndex({ hash: 1, player: 1 });
     await db.collection("discordRankBotUsers").createIndex({ scId: 1, discId: 1 });
     await db.collection("scoresaberRankedMaps").createIndex({ hash: 1 });
     await db.collection("beatSaverLocal").createIndex({ key: 1, "versions.hash": 1 });
