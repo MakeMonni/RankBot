@@ -130,23 +130,19 @@ class BeatSaverUtils {
     }
 
     async bulkFindMapsByHash(arrayOfHash) {
-        arrayOfHash = arrayOfHash.map(e => e.toUpperCase()); // Uppercase everything
-        arrayOfHash = [...new Set(arrayOfHash)] // Remove duplicates
+        arrayOfHash = arrayOfHash.map(e => e.toUpperCase());
+        arrayOfHash = [...new Set(arrayOfHash)]; // Remove duplicates
         let maps = [];
         const batches = this.batcher(arrayOfHash, 100) // Use the batcher function to split the array into smaller batches
         for (let i = 0; i < batches.length; i++) {
-            const currentBatch = batches[i]
-            let batchMaps = await this.db.collection("beatSaverLocal").find({ "versions.hash": { $in: currentBatch } }).toArray()
+            const currentBatch = batches[i];
+            let batchMaps = await this.db.collection("beatSaverLocal").find({ "versions.hash": { $in: currentBatch } }).toArray();
             await Promise.all(
                 // We need to Promise all otherwise we get issues with Promises that are generated inside
                 currentBatch.map(async (e, j) => {
-                    // We need to find out if every hash in currentBatch was included in the batchMaps 
-                    // otherwise we try to fetch it with getMapDataByHash
                     if (batchMaps.findIndex(x => x.versions.find(y => y.hash === e)) === -1) {
                         const tmpMap = await this.getMapDataByHash(e);
-                        // Add a null into the array if not found for easier error management
-                        if (tmpMap === null) batchMaps.splice(j, 0, null); 
-                        else batchMaps.splice(j, 0, tmpMap); // Otherwise we add the map into the array
+                        if (tmpMap !== null) batchMaps.splice(j, 0, tmpMap);
                     }
                 })
             )
