@@ -387,7 +387,6 @@ class ScoreSaberUtils {
                     }
                 })
                 const changeCount = await this.db.collection("scoresaberRankedMaps").bulkWrite(bulkUpdate);
-                console.log(changeCount)
                 console.log(`Modified ${changeCount.modifiedCount} maps.`);
             }
 
