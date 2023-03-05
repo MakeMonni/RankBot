@@ -20,10 +20,11 @@ class PlaylistInfo extends Command {
 
             let difficultyDataArr = [];
             let mapInfo = "Playlistdata:\n";
-            for (let i = 0; i < data.songs.length; i++) {
-                let mapHash = data.songs[i].hash;
+            const hashlist = data.songs.map(x => x.hash);
+            const maps = await client.beatsaver.bulkFindMapsByHash(hashlist);
 
-                let map = await client.beatsaver.findMapByHash(mapHash);
+            for (let i = 0; i < data.songs.length; i++) {
+                const map = maps.find(e => e?.versions.find(x => x?.hash === data.songs[i].hash));
 
                 if (!map) {
                     mapInfo = mapInfo + (`Could not find map ${data.songs[i].hash}\n-=-\n`)
@@ -49,7 +50,7 @@ class PlaylistInfo extends Command {
                 }
             }
 
-            if (difficultyDataArr.length > 1) {
+            if (difficultyDataArr.length > 0) {
                 const peakNPS = Math.round(Math.max.apply(Math, difficultyDataArr.map(function (e) { return e.nps })) * 100) / 100;
                 const minNPS = Math.round(Math.min.apply(Math, difficultyDataArr.map(function (e) { return e.nps })) * 100) / 100;
                 const avgNPS = Math.round(difficultyDataArr.reduce((p, c) => p + c.nps, 0) / difficultyDataArr.length * 100) / 100;
