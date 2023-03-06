@@ -16,6 +16,12 @@ class Me extends Command {
             message.channel.send(`I'm sorry I could not find you in the database.\nTry using ${client.config.prefix}addme <scoresaberid> to get added into this awesome system.`);
         } else {
             let user = await client.scoresaber.getUser(dbuser.scId);
+            let globalRank = user.rank
+            let countryRank = user.countryRank
+            if (globalRank === 0) {
+                globalRank = "Inactive"
+                countryRank = "Inactive"
+            }
             if (user) {
                 const embed = new Discord.MessageEmbed()
                     .setColor('#513dff')
