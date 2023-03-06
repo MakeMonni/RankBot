@@ -26,9 +26,11 @@ class PlaylistUpdate extends Command {
             let hashDiffPairs = [];
 
             try {
+                const hashlist = data.songs.map(e => e.hash);
+                const maps = await client.beatsaver.bulkFindMapsByHash(hashlist);
                 for (let i = 0; i < data.songs.length; i++) {
-                    let mapHash = data.songs[i].hash;
-                    let map = await client.beatsaver.findMapByHash(mapHash);
+                    const mapHash = data.songs[i].hash;
+                    const map = maps.find(e => e?.versions.find(x => x?.hash === mapHash));
 
                     if (!map) {
                         errored++;
@@ -73,7 +75,7 @@ class PlaylistUpdate extends Command {
                     }
                     else {
                         duplicate++;
-                        changelog += `${map.metadata.songAuthorName} - ${map.metadata.songName} by: ${map.metadata.levelAuthorName} \nHash: ${data.songs[i].hash}\n!!! DUPLICATE !!!\n-=-\n`
+                        changelog += `${map.metadata.songAuthorName} - ${map.metadata.songName} by: ${map.metadata.levelAuthorName} \nHash: ${mapHash}\n!!! DUPLICATE !!!\n-=-\n`
                         if (args[0] === "clean") {
                             data.songs.splice(i, 1);
                         }
