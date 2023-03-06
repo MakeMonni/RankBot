@@ -32,7 +32,7 @@ class PlaylistUpdate extends Command {
 
                     if (!map) {
                         errored++;
-                        changelog += `${mapHash} could not be found.\n`
+                        changelog += `${mapHash} could not be found.\n-=-\n`
                         continue;
                     }
                     else if (mapHash !== map?.versions[0].hash) {
@@ -49,17 +49,31 @@ class PlaylistUpdate extends Command {
                             data.songs.splice(i, 1);
                         }
                     }
-                    //Check for duplicate maps
-                    const index = hashDiffPairs.findIndex(pair => pair.hash === data.songs[i].hash && pair.diffs === data.songs[i].difficulties[0].name);
-                    if (index === -1) {
+                    // Messy logic here
+                    // Will eventually get moved to a website for better UI options and such
+                    // Letting hashDiffIndex remain undefined if we cannot find a difficulty array on the playlist data
+                    const hashIndex = hashDiffPairs.findIndex(pair => pair.hash === data.songs[i].hash);
+                    let hashDiffIndex;
+                    if (data.songs[i].difficulties) {
+                        // findIndex throws an error if no difficulties can be found
+                        // Also this should probably support multiple difficulties, not just the first one
+                        hashDiffIndex = hashDiffPairs.findIndex(pair => pair.hash === data.songs[i].hash && pair.diffs === data.songs[i]?.difficulties[0]?.name);
+                    }
+                    // Both the indexes needs to be found and since hashDiffIndex is undefined incase it was not found it skips this
+                    if (hashDiffIndex === -1 && hashIndex === -1) {
                         hashDiffPairs.push({
                             hash: data.songs[i].hash,
                             diffs: data.songs[i].difficulties[0].name
                         });
                     }
+                    else if (hashIndex === -1) {
+                        hashDiffPairs.push({
+                            hash: data.songs[i].hash
+                        });
+                    }
                     else {
                         duplicate++;
-                        changelog += `${map.metadata.songAuthorName} - ${map.metadata.songName} by: ${map.metadata.levelAuthorName} \n!!! DUPLICATE !!!\n-=-\n`
+                        changelog += `${map.metadata.songAuthorName} - ${map.metadata.songName} by: ${map.metadata.levelAuthorName} \nHash: ${data.songs[i].hash}\n!!! DUPLICATE !!!\n-=-\n`
                         if (args[0] === "clean") {
                             data.songs.splice(i, 1);
                         }
