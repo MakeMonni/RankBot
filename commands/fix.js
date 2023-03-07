@@ -127,7 +127,7 @@ class Fix extends Command {
                 return // Data is currently inconsitent when difficulties are wrongly reported as other difficulties
                 await message.channel.send("Starting");
                 const maps = await client.db.collection("beatSaverLocal").find({ "versions.diffs.me": { $exists: false } }).toArray();
-                let = [];
+                let bulkWrite = [];
                 console.time();
                 const promises = [];
                 //for (let i = 0; i < maps.length; i++) {

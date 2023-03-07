@@ -20,6 +20,7 @@ MongoClient.connect(config.mongourl, async (err, client) => {
         await botClient.scoresaber.scoreTracker();
         await botClient.scoresaber.scorePrehandler();
         await botClient.scoresaber.rankTracker();
+        await botClient.beatsaver.deletionChecker();
     });
 
     const roleUpdates = schedule.scheduleJob('0 0,6,12,18 * * *', async function () {
@@ -42,6 +43,7 @@ MongoClient.connect(config.mongourl, async (err, client) => {
 
     await db.collection("discordRankBotScores").createIndex({ hash: 1, player: 1, leaderboardId: 1 });
     await db.collection("discordRankBotScores").createIndex({ hash: 1, player: 1 });
+    await db.collection("discordRankBotScores").createIndex({ country: 1, ranked: 1 });
     await db.collection("discordRankBotUsers").createIndex({ scId: 1, discId: 1 });
     await db.collection("scoresaberRankedMaps").createIndex({ hash: 1 });
     await db.collection("beatSaverLocal").createIndex({ key: 1, "versions.hash": 1 });
