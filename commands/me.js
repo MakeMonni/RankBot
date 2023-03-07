@@ -43,7 +43,7 @@ class Me extends Command {
                                 scores: { $push: { score: "$score", player: "$player" } }
                             }
                         },
-                    ]).toArray()
+                    ]).toArray();
 
                     let number1 = [];
                     let pos = [];
@@ -75,8 +75,9 @@ class Me extends Command {
                     embed.addField("Country ranks", `Average: **${avgRank}**\nBest: **#${minRank}** (${minCount}) | **#${secondMin}** (${secondMinCount}) | **#${thirdMin}** (${thirdMinCount})`)
                 }
 
-                await message.channel.send(embed)
-            } else message.channel.send(`Seems like we ran into an error, you should try again later`);
+                await message.channel.send(embed);
+            } 
+            else message.channel.send(`Seems like we ran into an error, you should try again later`);
         }
     }
 }
