@@ -478,7 +478,7 @@ class ScoreSaberUtils {
                     }
                 }
             }
-            if (bulkWrite.length >= 500) {
+            if (bulkWrite.length >= 500 || i === scores.length) {
                 const runningBulk = bulkWrite;
                 this.client.db.collection("discordRankBotScores").bulkWrite(runningBulk);
                 bulkWrite = [];
