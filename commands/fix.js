@@ -10,7 +10,7 @@ const hashSearchLimiter = new Bottleneck({
     reservoirRefreshInterval: 1000,
 
     minTime: 5
-})
+});
 
 class Fix extends Command {
     async run(client, message, args) {
@@ -118,11 +118,16 @@ class Fix extends Command {
                 await client.scoresaber.scorePrehandler();
                 await message.channel.send("Done");
             }
+            if (args[0] === "deletionchecker") {
+                await message.channel.send("Starting");
+                await client.beatsaver.deletionChecker();
+                await message.channel.send("Done");
+            }
             else {
                 return // Data is currently inconsitent when difficulties are wrongly reported as other difficulties
                 await message.channel.send("Starting");
                 const maps = await client.db.collection("beatSaverLocal").find({ "versions.diffs.me": { $exists: false } }).toArray();
-                let bulkWrite = [];
+                let = [];
                 console.time();
                 const promises = [];
                 //for (let i = 0; i < maps.length; i++) {
@@ -139,15 +144,15 @@ class Fix extends Command {
                                 if (res.difficulties[j].characteristicHuman === "Custom") res.difficulties[j].characteristicHuman = "Standard";
                                 console.log(res.difficulties[j].difficultyHuman)
 
-                                bulkWrite.push(
-                                    {
-                                        updateOne: {
-                                            "filter": { "versions.hash": res.hash },
-                                            "update": { $set: { "versions.$[diff]": { me: me, ne: ne, cinema: cinema, chroma: chroma } } },
-                                            "arrayFilters": [{ diff: res.difficulties[j].difficultyHuman /*, diff: res.difficulties[j].characteristicHuman */ }]
+                                    .push(
+                                        {
+                                            updateOne: {
+                                                "filter": { "versions.hash": res.hash },
+                                                "update": { $set: { "versions.$[diff]": { me: me, ne: ne, cinema: cinema, chroma: chroma } } },
+                                                "arrayFilters": [{ diff: res.difficulties[j].difficultyHuman /*, diff: res.difficulties[j].characteristicHuman */ }]
+                                            }
                                         }
-                                    }
-                                )
+                                    )
                             }
                         })
                         .catch(err => console.log(maps[i].versions[0].hash)))

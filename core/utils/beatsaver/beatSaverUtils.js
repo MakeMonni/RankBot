@@ -16,7 +16,7 @@ const BeatSaverLimiter = new Bottleneck({
     reservoirRefreshInterval: 1000 * 60 * 2,
 
     minTime: 1000
-})
+});
 
 class BeatSaverUtils {
     constructor(db, client) {
@@ -396,5 +396,37 @@ class BeatSaverUtils {
     }
 
     batcher = (arr, size) => arr.length > size ? [arr.slice(0, size), ...this.batcher(arr.slice(size), size)] : [arr];
+
+    async deletionChecker() {
+        console.log("Running deletion checker");
+        console.time("Deletion Checker");
+        const dateYesterday = Date.now() - 86400000;
+        const maps = await this.client.db.collection("beatSaverLocal").find({ deleted: { $exists: false }, automapper: false, "versions.createdAt": { $lt: dateYesterday } }).toArray();
+        console.log(`${maps.length} maps to check.`);
+        let bulkWrite = [];
+
+        const res = await fetch(`https://beatsaber.tskoll.com/api/v1/hashes`)
+            .then(res => res.json())
+            .catch(err => console.log(err))
+
+        for (let i = 0; i < maps.length; i++) {
+            const mapHash = maps[i].versions[0].hash;
+            const index = res.findIndex(x => x === mapHash);
+
+            bulkWrite.push({
+                updateOne: {
+                    "filter": { "versions.hash": mapHash },
+                    // This is truthy based on if index was found or not
+                    "update": { $set: { deleted: (index === -1) } }
+                }
+            });
+            if (bulkWrite.length >= 500 || i === maps.length) {
+                const runningBulk = bulkWrite;
+                this.client.db.collection("beatSaverLocal").bulkWrite(runningBulk);
+                bulkWrite = [];
+            }
+        }
+        console.timeEnd("Deletion Checker");
+    }
 }
 module.exports = BeatSaverUtils;
