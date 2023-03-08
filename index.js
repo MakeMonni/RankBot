@@ -43,8 +43,9 @@ MongoClient.connect(config.mongourl, async (err, client) => {
 
     await db.collection("discordRankBotScores").createIndex({ hash: 1, player: 1, leaderboardId: 1 });
     await db.collection("discordRankBotScores").createIndex({ hash: 1, player: 1 });
-    await db.collection("discordRankBotScores").createIndex({ country: 1, ranked: 1 });
+    await db.collection("discordRankBotScores").createIndex({ ranked: 1, score: -1, date: 1, }, { partialFilterExpression: { country: config.country } });
     await db.collection("discordRankBotUsers").createIndex({ scId: 1, discId: 1 });
+    await db.collection("discordRankBotUsers").createIndex({ discId: 1 });
     await db.collection("scoresaberRankedMaps").createIndex({ hash: 1 });
     await db.collection("beatSaverLocal").createIndex({ key: 1, "versions.hash": 1 });
     await db.collection("beatSaverLocal").createIndex({ "versions.hash": 1 });
