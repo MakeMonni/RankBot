@@ -173,15 +173,25 @@ class BeatSaverUtils {
     }
 
     async bulkFindMapsByKey(arrayOfKeys) {
-        // TODO
-
         arrayOfKeys = arrayOfKeys.map(e => e.toUpperCase());
-        let maps = await this.db.collection("beatSaverLocal").find({ key: { $in: arrayOfKeys } })
-
-        // How to solve missing maps as they are not returned?
-        // Compare arrayOfHash[i] to maps[i] and if it does not match fill in that spot with  
-        // Use getMapDataByHash if not found?
-        // If not actually found insert empty element into array on that spot?
+        arrayOfKeys = [...new Set(arrayOfKeys)]; // Remove duplicates
+        let maps = [];
+        const batches = this.batcher(arrayOfKeys, 100) // Use the batcher function to split the array into smaller batches
+        for (let i = 0; i < batches.length; i++) {
+            const currentBatch = batches[i];
+            let batchMaps = await this.db.collection("beatSaverLocal").find({ key: { $in: currentBatch } }).toArray();
+            await Promise.all(
+                // We need to Promise all otherwise we get issues with Promises that are generated inside
+                currentBatch.map(async (e, j) => {
+                    if (batchMaps.findIndex(x => x.key === e) === -1) {
+                        const tmpMap = await this.getMapDataByKey(e);
+                        if (tmpMap !== null) batchMaps.splice(j, 0, tmpMap);
+                    }
+                })
+            )
+            maps.push(...batchMaps);
+        }
+        return maps;
     }
 
     async checkMapStatus(res, finder) {
@@ -197,7 +207,7 @@ class BeatSaverUtils {
     }
 
     async getMapDataByKey(key) {
-        console.log("Getting data from BeatSaver instead of DB.");
+        console.log("Getting data from BeatSaver instead of DB:", key);
 
         let map = await BeatSaverLimiter.schedule(async () => fetch(`https://api.beatsaver.com/maps/id/${key}`, options)
             .then(res => this.checkMapStatus(res, key))
