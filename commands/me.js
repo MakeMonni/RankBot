@@ -14,7 +14,8 @@ class Me extends Command {
 
         if (!dbuser) {
             message.channel.send(`I'm sorry I could not find you in the database.\nTry using ${client.config.prefix}addme <scoresaberid> to get added into this awesome system.`);
-        } else {
+        } 
+        else {
             let user = await client.scoresaber.getUser(dbuser.scId);
             let globalRank = user.rank
             let countryRank = user.countryRank
@@ -58,7 +59,6 @@ class Me extends Command {
                     }
 
                     console.log("Rank1s", number1);
-
                     const count = (arr, val) => arr.reduce((a, v) => (v === val ? a + 1 : a), 0);
 
                     const avgRank = Math.round(pos.reduce((p, c) => p + c, 0) / pos.length * 100) / 100;
@@ -74,8 +74,7 @@ class Me extends Command {
 
                     embed.addField("Country ranks", `Average: **${avgRank}**\nBest: **#${minRank}** (${minCount}) | **#${secondMin}** (${secondMinCount}) | **#${thirdMin}** (${thirdMinCount})`)
                 }
-
-                await message.channel.send(embed);
+                await message.channel.send(embed)
             } 
             else message.channel.send(`Seems like we ran into an error, you should try again later`);
         }
