@@ -4,7 +4,8 @@ class Addme extends Command {
     async run(client, message, args) {
         if (!args.length) {
             return message.channel.send(`Please use a scoresaber id... ${message.author}!`);
-        } else if (args) {
+        } 
+        else if (args) {
             let id = args[0].replace(/\D/g, '');
             let user = await client.scoresaber.getUser(id);
 
@@ -47,16 +48,19 @@ class Addme extends Command {
                             else {
                                 await message.channel.send(`Added you as ${user.name}\n<https://scoresaber.com/u/${user.id}>`);
                             }
-                        } else {
+                        } 
+                        else {
                             if (message.member.roles.cache.some(role => role.name === 'landed')) {
                                 let addRole = message.guild.roles.cache.find(role => role.name === "Guest");
                                 await message.member.roles.set([addRole])
                                     .catch(console.log);
                                 userRegistered(client, message, client.config.adminchannelID, user, id);
-                            } else message.channel.send("You have been added but unfortunately you will not get a role based on your rank as its not supported for international players.");
+                            } 
+                            else message.channel.send("You have been added but unfortunately you will not get a role based on your rank as its not supported for international players.");
                         }
                     });
-                } else {
+                } 
+                else {
                     await message.channel.send("You propably already exist in the database...");
                 }
             })
