@@ -55,6 +55,41 @@ class BeatLeaderUtils {
         }
     }
 
+    async swingDataLoader(beatLeaderID, lastScoreToFindTime) {
+        const timeToFind = lastScoreToFindTime / 1000;
+        let page = 1;
+        let count = 50;
+        let scoreIds = [];
+        let swingData = [];
+        let allScoresNotFound = true;
+        while (allScoresNotFound) {
+            await limiter.schedule({ id: `Ranked maps page: ${page}` }, async () => {
+                console.log("page",page)
+                const res = await fetch(`https://api.beatleader.xyz/player/${beatLeaderID}/scores?sortBy=date&order=desc&page=${page}&count=${count}&time_from=${lastScoreToFindTime}`)
+                    .then(res => res.json())
+                    .catch(err => { throw new Error(err) });
+
+                scoreIds.push(...res.data.map(x => x.id))
+                if (page * count >= res.metadata.total) {
+                    allScoresNotFound = false;
+                }
+                else page++
+            })
+        }
+        //Move this to it's own function
+        for (let i = 0; i < scoreIds.length; i++) {
+            await limiter.schedule({ id: `` }, async () => {
+                console.log("score",i)
+                const res = await fetch(`https://api.beatleader.xyz/score/statistic/${scoreIds[i]}`)
+                    .then(res => res.json())
+                    .catch(err => { throw new Error(err) });
+                swingData.push(res);
+            })
+        }
+        //This returns an array of swingdata/trackers, while previously we had object.trackers
+        console.log( swingData);
+    }
+
 
 }
 
