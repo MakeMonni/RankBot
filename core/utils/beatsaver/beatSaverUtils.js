@@ -438,5 +438,25 @@ class BeatSaverUtils {
         }
         console.timeEnd("Deletion Checker");
     }
+
+    async missingMapChecker() {
+        console.log("Running missing map checker")
+        console.time("Missing Map Checker");
+        let res = await fetch(`https://beatsaber.tskoll.com/api/v1/keys`)
+            .then(res => res.json())
+            .catch(err => console.log(err))
+
+        const existingKeys = res.map(e => e.toUpperCase());
+        const currentKeys = await this.db.collection("beatSaverLocal").find({ $or: [{ deleted: { $exists: false }, deleted: false }] }).toArray();
+
+        const currentKeysSet = new Set(currentKeys.map(x => x.key));
+        const missingKeys = existingKeys.filter(e => !currentKeysSet.has(e));
+
+        console.log("Missing keys:", missingKeys.length)
+        for (let i = 0; i < missingKeys.length; i++) {
+            await this.getMapDataByKey(missingKeys[i]);
+        }
+        console.timeEnd("Missing Map Checker");
+    }
 }
 module.exports = BeatSaverUtils;

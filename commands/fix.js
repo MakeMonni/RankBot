@@ -123,6 +123,12 @@ class Fix extends Command {
                 await client.beatsaver.deletionChecker();
                 await message.channel.send("Done");
             }
+            if (args[0] === "missingmapchecker") {
+                await message.channel.send("Starting");
+                await client.beatsaver.missingMapChecker();
+                await message.channel.send("Done");
+            }
+            
             else {
                 return // Data is currently inconsitent when difficulties are wrongly reported as other difficulties
                 await message.channel.send("Starting");
