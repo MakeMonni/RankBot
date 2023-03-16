@@ -55,6 +55,7 @@ class BeatLeaderUtils {
         }
     }
 
+    // This is very slow way to get the desired swing data
     async swingDataLoader(beatLeaderID, lastScoreToFindTime) {
         const timeToFind = lastScoreToFindTime / 1000;
         let page = 1;
@@ -64,8 +65,8 @@ class BeatLeaderUtils {
         let allScoresNotFound = true;
         while (allScoresNotFound) {
             await limiter.schedule({ id: `Ranked maps page: ${page}` }, async () => {
-                console.log("page",page)
-                const res = await fetch(`https://api.beatleader.xyz/player/${beatLeaderID}/scores?sortBy=date&order=desc&page=${page}&count=${count}&time_from=${lastScoreToFindTime}`)
+                console.log("page", page)
+                const res = await fetch(`https://api.beatleader.xyz/player/${beatLeaderID}/scores?sortBy=date&order=desc&page=${page}&count=${count}&time_from=${timeToFind}`)
                     .then(res => res.json())
                     .catch(err => { throw new Error(err) });
 
@@ -79,7 +80,7 @@ class BeatLeaderUtils {
         //Move this to it's own function
         for (let i = 0; i < scoreIds.length; i++) {
             await limiter.schedule({ id: `` }, async () => {
-                console.log("score",i)
+                console.log("score", i)
                 const res = await fetch(`https://api.beatleader.xyz/score/statistic/${scoreIds[i]}`)
                     .then(res => res.json())
                     .catch(err => { throw new Error(err) });
@@ -87,7 +88,7 @@ class BeatLeaderUtils {
             })
         }
         //This returns an array of swingdata/trackers, while previously we had object.trackers
-        console.log( swingData);
+        console.log(swingData);
     }
 
 
