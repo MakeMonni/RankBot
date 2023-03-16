@@ -120,7 +120,8 @@ class Fix extends Command {
             }
             if (args[0] === "deletionchecker") {
                 await message.channel.send("Starting");
-                await client.beatsaver.deletionChecker();
+                if(args[1] === "full") await client.beatsaver.deletionChecker(true);
+                else await client.beatsaver.deletionChecker();
                 await message.channel.send("Done");
             }
             if (args[0] === "missingmapchecker") {

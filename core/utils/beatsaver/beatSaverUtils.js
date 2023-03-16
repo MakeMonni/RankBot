@@ -407,11 +407,13 @@ class BeatSaverUtils {
 
     batcher = (arr, size) => arr.length > size ? [arr.slice(0, size), ...this.batcher(arr.slice(size), size)] : [arr];
 
-    async deletionChecker() {
+    async deletionChecker(full) {
         console.log("Running deletion checker");
         console.time("Deletion Checker");
         const dateYesterday = Date.now() - 86400000;
-        const maps = await this.client.db.collection("beatSaverLocal").find({ deleted: { $exists: false }, automapper: false, "versions.createdAt": { $lt: dateYesterday } }).toArray();
+        let search = { automapper: false, "versions.createdAt": { $lt: dateYesterday } };
+        if(!full) search = { deleted: { $exists: false }, automapper: false, "versions.createdAt": { $lt: dateYesterday } };
+        const maps = await this.client.db.collection("beatSaverLocal").find(search).toArray();
         console.log(`${maps.length} maps to check.`);
         let bulkWrite = [];
 
@@ -430,12 +432,13 @@ class BeatSaverUtils {
                     "update": { $set: { deleted: (index === -1) } }
                 }
             });
-            if (bulkWrite.length >= 500 || i === maps.length) {
+            if (bulkWrite.length >= 500) {
                 const runningBulk = bulkWrite;
-                this.client.db.collection("beatSaverLocal").bulkWrite(runningBulk);
+                await this.client.db.collection("beatSaverLocal").bulkWrite(runningBulk);
                 bulkWrite = [];
             }
         }
+        if(bulkWrite.length > 0) await this.client.db.collection("beatSaverLocal").bulkWrite(bulkWrite);
         console.timeEnd("Deletion Checker");
     }
 
@@ -447,9 +450,10 @@ class BeatSaverUtils {
             .catch(err => console.log(err))
 
         const existingKeys = res.map(e => e.toUpperCase());
-        const currentKeys = await this.db.collection("beatSaverLocal").find({ $or: [{ deleted: { $exists: false }, deleted: false }] }).toArray();
 
-        const currentKeysSet = new Set(currentKeys.map(x => x.key));
+        const maps = await this.db.collection("beatSaverLocal").find({ $or: [{ deleted: { $exists: false }}, {deleted: false }] }).toArray();
+        const currentKeysSet = new Set(maps.map(x => x.key));
+
         const missingKeys = existingKeys.filter(e => !currentKeysSet.has(e));
 
         console.log("Missing keys:", missingKeys.length)
