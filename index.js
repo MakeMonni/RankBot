@@ -21,6 +21,7 @@ MongoClient.connect(config.mongourl, async (err, client) => {
         await botClient.scoresaber.scorePrehandler();
         await botClient.scoresaber.rankTracker();
         await botClient.beatsaver.deletionChecker();
+        await botClient.beatsaver.missingMapChecker();
     });
 
     const roleUpdates = schedule.scheduleJob('0 0,6,12,18 * * *', async function () {
