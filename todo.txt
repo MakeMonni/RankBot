@@ -1,0 +1,41 @@
+Todo list for Migration Rankbot from MongoDb to PostgreSQL
+
+https://node-postgres.com/
+
+1. Database connection
+2. Migration
+3. Convert all current queries to new migrated Database
+    Rankbot
+    - Index.js, mainly indexes & connection
+    - Addme, query & inserted
+    - Beatsavior command deprecated, no need?
+    - Compare command deprecated, no need?
+    - CountryRank, query for existing scoresaber
+    - CreateMatch, query & insert matches
+    - DeleteMatch, query & delete matches
+    - DeleteMe, query & delete
+    - Fix command has many different possible queryies it can make but is there need to even port some of those over?
+    - Gains has many queries, few updates
+    - GetRanked mainly has update to existing scores to give them pp values, problably some other way to do this as well?
+    - Improve list has many queryies, also some unnecesary ones that calculate max score
+    - Leaderboard, possibly deprecate this?
+    - Me command contains the main reason we do this Migration
+    - Mutematch simple query
+    - Playlist contains various queries
+    - Ranbombsr simple query, need to find out how to get a random sample from new db
+    - Recentlist, simple check query
+    - Roleme, simple query user find
+    - Scorecheck, deprecate this?
+    - Snipelist, has some simple query checks
+    - Stats, queries on database statistics
+    - BotClient passes the db forward so we can use client.db.collection etc. will this work the same way?
+    - MemberHandler has some queries and writes for not yet registered members
+        Rankbot utils
+            - Beatleader, few
+            - BeatSaver, very many
+            - Beatsavior, few
+            - Misc, not even used?
+            - Scoresaber, very many
+    
+    Api
+    - Pretty much all endpoints use the database somehow
