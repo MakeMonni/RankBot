@@ -115,7 +115,7 @@ class Gains extends Command {
 
                 if (newScores.length > 0) {
                     if (message.author.id === '232564229763235841') {
-                        embed.addField(`Children sold`, `You have sold a total of 1 child.`);
+                        embed.addField(`Children sold`, `You have sold a total of 1,5 child.`);
                     }
                     embed.addField(`Playinfo`, `You played ${newScores.length} maps. \nDuration: ${lengthString}.`);
                     embed.addField(`Averages`, `NPS: ${averageNPS} | Acc: ${averageAccuracyMaps}`);
