@@ -20,6 +20,10 @@ class CommandHandler {
             const cmd = this.commands.get(command);
             if (cmd != null)
             try {
+                if (this.client.commandsDisabled && !this.client.checkIfOwner(message, true)) {
+                    await message.channel.send("Commands are currently disabled. Wait for owner to enable them again.");
+                    return;
+                }
                 await cmd.run(this.client, message, args);
             }
             catch (err)

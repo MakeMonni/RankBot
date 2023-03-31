@@ -36,12 +36,13 @@ class BotClient extends Client {
         this.twitchAccessToken = "";
         this.streamsLive = [];
         this.updates = true;
+        this.commandsDisabled = false;
     }
 
-    checkIfOwner(message) {
+    checkIfOwner(message, noPost) {
         if (message.author.id === message.guild.ownerID) return true;
         else {
-            message.channel.send(`Sorry you lack the permissions for this command.`);
+            if (!noPost) message.channel.send(`Sorry you lack the permissions for this command.`);
             return false;
         }
     }
