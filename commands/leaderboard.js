@@ -75,7 +75,7 @@ class Leaderboard extends Command {
                     }
 
                     const key = map.key;
-                    embed.addField(`\u200b`, `[Download](https://beatsaver.com${map.downloadURL}) | [OneClick](http://api.monni.moe/oneclick?k=${key}) | [BeatSaver](https://beatsaver.com/beatmap/${key}) | [Preview](https://skystudioapps.com/bs-viewer/?id=${key})`);
+                    embed.addField(`\u200b`, `[Download](https://beatsaver.com${map.downloadURL}) | [OneClick](http://api.monni.moe/oneclick?k=${key}) | [BeatSaver](https://beatsaver.com/beatmap/${key}) | [Preview](https://allpoland.github.io/ArcViewer/?id=${key})`);
 
                     message.channel.send(embed);
                 }
@@ -136,7 +136,7 @@ class Leaderboard extends Command {
                     }
 
                     const key = map.key;
-                    embed.addField(`\u200b`, `[Download](https://beatsaver.com${map.downloadURL}) | [BeatSaver](https://beatsaver.com/beatmap/${key}) | [Preview](https://skystudioapps.com/bs-viewer/?id=${key})`);
+                    embed.addField(`\u200b`, `[Download](https://beatsaver.com${map.downloadURL}) | [BeatSaver](https://beatsaver.com/beatmap/${key}) | [Preview](https://allpoland.github.io/ArcViewer/?id=${key})`);
 
                     message.channel.send(embed);
                 }

@@ -28,7 +28,7 @@ class Randombsr extends Command {
             .addField(`\u200b`, `\`!bsr ${map[0].key}\``)
             .addField(`Duration`, `${mapMinutes}:${mapSecond}`)
             .addField(`NJS`, `${njsString}`)
-            .addField(`\u200b`, `[Download](${map[0].versions[0].downloadURL}) | [OneClick](http://api.monni.moe/oneclick?k=${map[0].key}) | [BeatSaver](https://beatsaver.com/maps/${map[0].key.toLowerCase()}) | [Preview](https://skystudioapps.com/bs-viewer/?id=${map[0].key}) | [Mapchecker](https://kivalevan.me/BeatSaber-MapCheck/?id=${map[0].key})`);
+            .addField(`\u200b`, `[Download](${map[0].versions[0].downloadURL}) | [OneClick](http://api.monni.moe/oneclick?k=${map[0].key}) | [BeatSaver](https://beatsaver.com/maps/${map[0].key.toLowerCase()}) | [Preview](https://allpoland.github.io/ArcViewer/?id=${map[0].key}) | [Mapchecker](https://kivalevan.me/BeatSaber-MapCheck/?id=${map[0].key})`);
         
         await message.channel.send(embed);
     }
