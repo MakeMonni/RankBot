@@ -83,7 +83,7 @@ class GetRanked extends Command {
                             embed.addField(`${client.beatsaver.convertDiffNameVisual(map[l].diff)}`, `**${map[l].stars}** :star: | NJS: **${thisDiffData.njs}** | NPS: **${NPS}**`);
                         }
                         const key = mapData.key;
-                        embed.addField(`\u200b`, `[Download](${mapData.versions[0].downloadURL}) | [OneClick](http://api.monni.moe/oneclick?k=${key}) | [BeatSaver](https://beatsaver.com/maps/${key.toLowerCase()}) | [Preview](https://skystudioapps.com/bs-viewer/?id=${key})`);
+                        embed.addField(`\u200b`, `[Download](${mapData.versions[0].downloadURL}) | [OneClick](http://api.monni.moe/oneclick?k=${key}) | [BeatSaver](https://beatsaver.com/maps/${key.toLowerCase()}) | [Preview](https://allpoland.github.io/ArcViewer/?id=${key})`);
                         await message.channel.send(embed);
                     }
                     else skipped++
