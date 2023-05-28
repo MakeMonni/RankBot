@@ -18,15 +18,10 @@ class Playlist extends Command {
                     return;
                 }
 
-                const filterArgs = args.slice(2);
                 const amount = parseInt(args[1]);
+                const filterArgs = args.slice(2);
                 const filters = [];
-                let njs = ""
-                let nps = ""
-                let length = ""
-                let njsType = ""
-                let npsType = ""
-                let lengthType = ""
+                let url = ``
 
                 const njsIndex = filterArgs.findIndex(e => e.toLowerCase().startsWith("njs:"));
                 const npsIndex = filterArgs.findIndex(e => e.toLowerCase().startsWith("nps:"));
@@ -36,9 +31,8 @@ class Playlist extends Command {
                 if (njsIndex !== -1) {
                     const split = filterArgs[njsIndex].split(":");
                     if ((split[1] === "under" || split[1] === "over") && split[2] > 0) {
-                        njsType = split[1];
-                        njs = split[2];
                         filters.push("NJS");
+                        url += `&njs=${split[2]}&njstype=${split[1]}`;
                     } else {
                         err = true;
                     }
@@ -46,25 +40,23 @@ class Playlist extends Command {
                 if (npsIndex !== -1) {
                     const split = filterArgs[npsIndex].split(":");
                     if ((split[1] === "under" || split[1] === "over") && split[2] > 0) {
-                        npsType = split[1];
-                        nps = split[2];
                         filters.push("NPS");
-                    } else {
+                        url += `&nps=${split[2]}&npstype=${split[1]}`;
+                    }
+                     else {
                         err = true;
                     }
                 }
                 if (lengthIndex !== -1) {
                     const split = filterArgs[lengthIndex].split(":");
                     if ((split[1] === "under" || split[1] === "over") && split[2] > 0) {
-                        lengthType = split[1];
-                        length = split[2];
                         filters.push("Length");
+                        url += `&length=${split[2]}&lengthtype=${split[1]}`;
                     } else {
                         err = true;
                     }
                 }
-
-                const res = await client.rankbotApi.apiCall(client.config.syncURL + `/random?a=${amount}&njs=${njs}&njstype=${njsType}&nps=${nps}&npstype=${npsType}&length=${length}&lengthtype=${lengthType}`);
+                const res = await client.rankbotApi.apiCall(client.config.syncURL + `/random?a=${amount}${url}`);
                 const playlistAttachment = await client.misc.jsonAttachmentCreator(res, "Random");
                 const errMsg = `\nOne or more invalid arguments. Examples: \`njs:under:14 nps:over:11 length:under:60(in seconds)\``
                 let msg = ""
