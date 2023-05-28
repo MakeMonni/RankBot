@@ -28,10 +28,10 @@ class Playlist extends Command {
                 let npsType = ""
                 let lengthType = ""
 
-                const njsIndex = filterArgs.findIndex(e => e.startsWith("njs:").toLower());
-                const npsIndex = filterArgs.findIndex(e => e.startsWith("nps:").toLower());
-                const lengthIndex = filterArgs.findIndex(e => e.startsWith("length:").toLower());
-                const errMsg = `Invalid arguments. Examples: \`njs:under:14 nps:over:11 length:under:60(in seconds)\``
+                const njsIndex = filterArgs.findIndex(e => e.toLowerCase().startsWith("njs:"));
+                const npsIndex = filterArgs.findIndex(e => e.toLowerCase().startsWith("nps:"));
+                const lengthIndex = filterArgs.findIndex(e => e.toLowerCase().startsWith("length:"));
+                let err = false
 
                 if (njsIndex !== -1) {
                     const split = filterArgs[njsIndex].split(":");
@@ -40,7 +40,7 @@ class Playlist extends Command {
                         njs = split[2];
                         filters.push("NJS");
                     } else {
-                        await message.channel.send(errMsg);
+                        err = true;
                     }
                 }
                 if (npsIndex !== -1) {
@@ -50,7 +50,7 @@ class Playlist extends Command {
                         nps = split[2];
                         filters.push("NPS");
                     } else {
-                        await message.channel.send(errMsg);
+                        err = true;
                     }
                 }
                 if (lengthIndex !== -1) {
@@ -60,15 +60,17 @@ class Playlist extends Command {
                         length = split[2];
                         filters.push("Length");
                     } else {
-                        await message.channel.send(errMsg);
+                        err = true;
                     }
                 }
 
                 const res = await client.rankbotApi.apiCall(client.config.syncURL + `/random?a=${amount}&njs=${njs}&njstype=${njsType}&nps=${nps}&npstype=${npsType}&length=${length}&lengthtype=${lengthType}`);
                 const playlistAttachment = await client.misc.jsonAttachmentCreator(res, "Random");
+                const errMsg = `\nOne or more invalid arguments. Examples: \`njs:under:14 nps:over:11 length:under:60(in seconds)\``
                 let msg = ""
-                if (filterArgs.length > 0) msg += `\nFiltered by ${filters.join(", ")}.`
-                await message.channel.send(`${message.author}, here is your random playlist.${msg}`, playlistAttachment);
+                if (filters.length > 0) msg += `Filtered by ${filters.join(", ")}.`;
+                if (err || filterArgs.length > filters.length) msg += errMsg;
+                await message.channel.send(`${message.author}, here is your random playlist. ${msg}`, playlistAttachment);
 
             }
             else {
