@@ -17,15 +17,56 @@ class Playlist extends Command {
                     await message.channel.send("Sorry, max amount 10000");
                     return;
                 }
-                let amount = parseInt(args[1]);
-                const maps = await client.db.collection("beatSaverLocal").aggregate([{ $match: { automapper: false } }, { $sample: { size: amount } }]).toArray();
-                const mapHashes = await hashes(maps);
 
-                const playlistAttachment = await client.misc.createPlaylist("RandomPlaylist", mapHashes, "https://cdn.discordapp.com/attachments/818358679296147487/844607045130387526/Banana_Dice.jpg", `${client.config.syncURL}/random?a=${args[1]}`, "A random playlist :)")
-                await message.channel.send(`${message.author}, here is your random playlist. :)`, playlistAttachment);
+                const amount = parseInt(args[1]);
+                const filterArgs = args.slice(2);
+                const filters = [];
+                let url = ``
+
+                const njsIndex = filterArgs.findIndex(e => e.toLowerCase().startsWith("njs:"));
+                const npsIndex = filterArgs.findIndex(e => e.toLowerCase().startsWith("nps:"));
+                const lengthIndex = filterArgs.findIndex(e => e.toLowerCase().startsWith("length:"));
+                let err = false
+
+                if (njsIndex !== -1) {
+                    const split = filterArgs[njsIndex].split(":");
+                    if ((split[1] === "under" || split[1] === "over") && split[2] > 0) {
+                        filters.push("NJS");
+                        url += `&njs=${split[2]}&njstype=${split[1]}`;
+                    } else {
+                        err = true;
+                    }
+                }
+                if (npsIndex !== -1) {
+                    const split = filterArgs[npsIndex].split(":");
+                    if ((split[1] === "under" || split[1] === "over") && split[2] > 0) {
+                        filters.push("NPS");
+                        url += `&nps=${split[2]}&npstype=${split[1]}`;
+                    }
+                     else {
+                        err = true;
+                    }
+                }
+                if (lengthIndex !== -1) {
+                    const split = filterArgs[lengthIndex].split(":");
+                    if ((split[1] === "under" || split[1] === "over") && split[2] > 0) {
+                        filters.push("Length");
+                        url += `&length=${split[2]}&lengthtype=${split[1]}`;
+                    } else {
+                        err = true;
+                    }
+                }
+                const res = await client.rankbotApi.apiCall(client.config.syncURL + `/random?a=${amount}${url}`);
+                const playlistAttachment = await client.misc.jsonAttachmentCreator(res, "Random");
+                const errMsg = `\nOne or more invalid arguments. Examples: \`njs:under:14 nps:over:11 length:under:60(in seconds)\``
+                let msg = ""
+                if (filters.length > 0) msg += `Filtered by ${filters.join(", ")}.`;
+                if (err || filterArgs.length > filters.length) msg += errMsg;
+                await message.channel.send(`${message.author}, here is your random playlist. ${msg}`, playlistAttachment);
+
             }
             else {
-                await message.channel.send(`That is not a valid amount maps for a playlist. \nExample: \`${client.config.prefix}playlist random 25\``);
+                await message.channel.send(`That is not a valid amount maps for a playlist. \nExample: \`${client.config.prefix}playlist random 25 (optional-> njs:under:14 nps:over:11 length:under:60(in seconds))\``);
             }
         }
 
