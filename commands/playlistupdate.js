@@ -56,7 +56,7 @@ class PlaylistUpdate extends Command {
                     // Letting hashDiffIndex remain undefined if we cannot find a difficulty array on the playlist data
                     const hashIndex = hashDiffPairs.findIndex(pair => pair.hash === data.songs[i].hash);
                     let hashDiffIndex;
-                    if (data.songs[i].difficulties) {
+                    if (data.songs[i].difficulties?.length > 0) {
                         // findIndex throws an error if no difficulties can be found
                         // Also this should probably support multiple difficulties, not just the first one
                         hashDiffIndex = hashDiffPairs.findIndex(pair => pair.hash === data.songs[i].hash && pair.diffs === data.songs[i]?.difficulties[0]?.name);
