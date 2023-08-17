@@ -2,12 +2,14 @@ const Command = require("../core/command/command.js");
 
 class Playlist extends Command {
     async run(client, message, args) {
+        const playlistHelpMsg = `\nRandom <amount> (<filters>)\nRating <amount> <under/over> <rating value>\nBeatsage\nMapper <mapper name(s)>\nRanked (<under/over> <star value>)\n\nExample: \`${client.config.prefix}playlist ranked\`\n**[More info and examples.](<https://github.com/MakeMonni/RankBot/wiki/Commands#playlist>)**`//\nNoodle\nMappinextensions
+
         if (args[0] === "help") {
-            await message.channel.send(`Playlist types:\nRandom <amount> (<filters>)\nRating <amount> <under/over> <rating value>\nBeatsage\nMapper <mapper name(s)>\nRanked (<under/over> <star value>)\n\nExample: \`${client.config.prefix}playlist ranked\`\n**[More info and examples.](<https://github.com/MakeMonni/RankBot/wiki/Commands#playlist>)**`) //\nNoodle\nMappinextensions
+            await message.channel.send("Playlist types:" + playlistHelpMsg)
         }
 
         else if (!args[0]) {
-            await message.channel.send(`No playlist type selected, use one of the following:\nRandom <amount> (<filters>)\nRating <amount> <under/over> <rating value>\nBeatsage\nMapper <mapper name(s)>\nRanked (<under/over> <star value>)\n\nExample: \`${client.config.prefix}playlist ranked\`\n**[More info and examples.](<https://github.com/MakeMonni/RankBot/wiki/Commands#playlist>)**`)
+            await message.channel.send("No playlist type selected, use one of the following:" + playlistHelpMsg)
             return; // \nNoodle\nMappingextensions
         }
 
@@ -202,7 +204,7 @@ class Playlist extends Command {
         }
 
         else {
-            await message.channel.send(`Not a valid playlist type, use one of the following:\nRandom <amount> (<filters>)\nRating <amount> <under/over> <rating value>\nBeatsage\nMapper <mapper name(s)>\nRanked (<under/over> <star value>)\n\nExample: \`${client.config.prefix}playlist ranked\`\n**[More info and examples.](<https://github.com/MakeMonni/RankBot/wiki/Commands#playlist>)**`)
+            await message.channel.send("Not a valid playlist type, use one of the following:" + playlistHelpMsg)
         }
     }
 }
