@@ -3,11 +3,11 @@ const Command = require("../core/command/command.js");
 class Playlist extends Command {
     async run(client, message, args) {
         if (args[0] === "help") {
-            await message.channel.send(`Playlist types: \nRandom <amount> (<filters>)\nRating <amount> <under/over> <value>\nBeatsage\nMapper <mapper name(s)>\nRanked\n\nExample: \`${client.config.prefix}playlist ranked\`\nMore info: <https://github.com/MakeMonni/RankBot/wiki/Commands#playlist>`) //\nNoodle\nMappinextensions
+            await message.channel.send(`Playlist types:\nRandom <amount> (<filters>)\nRating <amount> <under/over> <rating value>\nBeatsage\nMapper <mapper name(s)>\nRanked (<under/over> <star value>)\n\nExample: \`${client.config.prefix}playlist ranked\`\n**[More info and examples.](<https://github.com/MakeMonni/RankBot/wiki/Commands#playlist>)**`) //\nNoodle\nMappinextensions
         }
 
         else if (!args[0]) {
-            await message.channel.send("No playlist type selected. Pick one of the following.\nRandom\nRating\nBeatsage\nMapper\nRanked")
+            await message.channel.send(`No playlist type selected, use one of the following:\nRandom <amount> (<filters>)\nRating <amount> <under/over> <rating value>\nBeatsage\nMapper <mapper name(s)>\nRanked (<under/over> <star value>)\n\nExample: \`${client.config.prefix}playlist ranked\`\n**[More info and examples.](<https://github.com/MakeMonni/RankBot/wiki/Commands#playlist>)**`)
             return; // \nNoodle\nMappingextensions
         }
 
@@ -202,7 +202,7 @@ class Playlist extends Command {
         }
 
         else {
-            await message.channel.send(`Not a valid category, use ${client.config.prefix}playlist help`)
+            await message.channel.send(`Not a valid playlist type, use one of the following:\nRandom <amount> (<filters>)\nRating <amount> <under/over> <rating value>\nBeatsage\nMapper <mapper name(s)>\nRanked (<under/over> <star value>)\n\nExample: \`${client.config.prefix}playlist ranked\`\n**[More info and examples.](<https://github.com/MakeMonni/RankBot/wiki/Commands#playlist>)**`)
         }
     }
 }
