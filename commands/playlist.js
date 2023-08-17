@@ -2,15 +2,16 @@ const Command = require("../core/command/command.js");
 
 class Playlist extends Command {
     async run(client, message, args) {
-        const playlistHelpMsg = `\nRandom <amount> (<filters>)\nRating <amount> <under/over> <rating value>\nBeatsage\nMapper <mapper name(s)>\nRanked (<under/over> <star value>)\n\nExample: \`${client.config.prefix}playlist ranked\`\n**[More info and examples.](<https://github.com/MakeMonni/RankBot/wiki/Commands#playlist>)**`//\nNoodle\nMappinextensions
+        const playlistHelpMsg = `\nRandom <amount> (<filters>)\nRating <amount> <under/over> <rating value>\nBeatsage\nMapper <mapper name(s)>\nRanked (<under/over> <star value>)\n\nExample: \`${client.config.prefix}playlist ranked\`\n**[More info and examples.](<https://github.com/MakeMonni/RankBot/wiki/Commands#playlist>)**`;//\nNoodle\nMappinextensions
 
         if (args[0] === "help") {
-            await message.channel.send("Playlist types:" + playlistHelpMsg)
+            await message.channel.send("Playlist types:" + playlistHelpMsg);
+            return;
         }
 
         else if (!args[0]) {
-            await message.channel.send("No playlist type selected, use one of the following:" + playlistHelpMsg)
-            return; // \nNoodle\nMappingextensions
+            await message.channel.send("No playlist type selected, use one of the following:" + playlistHelpMsg);
+            return;
         }
 
         else if (args[0] === "random") {
@@ -60,7 +61,7 @@ class Playlist extends Command {
                 }
                 const res = await client.rankbotApi.apiCall(client.config.syncURL + `/random?a=${amount}${url}`);
                 const playlistAttachment = await client.misc.jsonAttachmentCreator(res, "Random");
-                const errMsg = `\nOne or more invalid arguments. Examples: \`njs:under:14 nps:over:11 length:under:60(in seconds)\``
+                const errMsg = `\nOne or more invalid arguments. Examples: \`njs:under:14 nps:over:11 length:under:60(in seconds)\``;
                 let msg = ""
                 if (filters.length > 0) msg += `Filtered by ${filters.join(", ")}.`;
                 if (err || filterArgs.length > filters.length) msg += errMsg;
@@ -82,9 +83,9 @@ class Playlist extends Command {
                 return;
             }
 
-            const amount = parseInt(args[1])
-            const type = args[2] === "over" ? "above" : args[2]
-            const rating = args[3]
+            const amount = parseInt(args[1]);
+            const type = args[2] === "over" ? "above" : args[2];
+            const rating = args[3];
 
             if (type !== "above" && type !== "under" || isNaN(rating)) {
                 await message.channel.send(`Invalid arguments. \nExample: \`${client.config.prefix}playlist rating 25 over 90\``);
@@ -123,7 +124,7 @@ class Playlist extends Command {
 
         else if (args[0] === "mapper") {
             if (!args[1]) {
-                await message.channel.send(`No mapper provided.\nExample: \`${client.config.prefix}playlist mapper ETAN Joshabi\``)
+                await message.channel.send(`No mapper provided.\nExample: \`${client.config.prefix}playlist mapper ETAN Joshabi\``);
                 return;
             }
 
@@ -204,7 +205,7 @@ class Playlist extends Command {
         }
 
         else {
-            await message.channel.send("Not a valid playlist type, use one of the following:" + playlistHelpMsg)
+            await message.channel.send("Not a valid playlist type, use one of the following:" + playlistHelpMsg);
         }
     }
 }
