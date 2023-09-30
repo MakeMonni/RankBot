@@ -8,11 +8,11 @@ class PlaylistInfo extends Command {
             await message.channel.send("No attachment provided.")
             return;
         }
-        const attachmentURL = message.attachments.array()[0].attachment;
-        if (attachmentURL.endsWith(".json") || attachmentURL.endsWith(".bplist")) {
+        const attachment = message.attachments.array()[0];
+        if (attachment.name.endsWith(".json") || attachment.name.endsWith(".bplist")) {
             let data;
             try {
-                data = await fetch(`${attachmentURL}`).then(res => res.json());
+                data = await fetch(`${attachment.url}`).then(res => res.json());
             } catch (err) {
                 message.channel.send("Something went wrong downloading the playlist.")
                 console.log(err)
