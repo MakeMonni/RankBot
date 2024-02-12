@@ -72,7 +72,7 @@ class BeatSaverUtils {
                 versionArray.push(map.versions[i]);
             }
             const mapObject = {
-                key: map.id.toUpperCase(),
+                key: map.id.toString().toUpperCase(),
                 description: map.description,
                 uploader: {
                     id: map.uploader.id,

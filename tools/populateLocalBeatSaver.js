@@ -34,6 +34,8 @@ MongoClient.connect(config.mongourl, async (err, client) => {
         promises.push(apiLimiter.schedule(async () => {
             const song = await getMonniApiMap(hexValue)
             if (song) { 
+                delete song._id
+                song.key = song.key.toString();
                 db.collection("beatSaverLocal").replaceOne({ key: song.key}, song, { upsert: true })
              }
         }));
