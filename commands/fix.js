@@ -120,7 +120,7 @@ class Fix extends Command {
             }
             if (args[0] === "deletionchecker") {
                 await message.channel.send("Starting");
-                if(args[1] === "full") await client.beatsaver.deletionChecker(true);
+                if (args[1] === "full") await client.beatsaver.deletionChecker(true);
                 else await client.beatsaver.deletionChecker();
                 await message.channel.send("Done");
             }
@@ -129,7 +129,27 @@ class Fix extends Command {
                 await client.beatsaver.missingMapChecker();
                 await message.channel.send("Done");
             }
-            
+            if (args[0] === "populateCountryBoards") {
+                const country = args[1]
+                const pages = args[2]
+
+                let playerIdsToScoreCheck = [];
+                for (let i = 0; i < pages; i++) {
+                    const res = await fetch(`https://scoresaber.com/api/players?countries=${country}&page=${i + 1}`)
+                        .then(res => res.json())
+                        .catch(err => console.log(err))
+
+                    res.players.forEach(e => { playerIdsToScoreCheck.push(e.id) });
+                }
+
+                console.log(`${playerIdsToScoreCheck.length} players to check`)
+
+                for (let i = 0; i < playerIdsToScoreCheck.length; i++) {
+                    await client.scoresaber.getAllScores(playerIdsToScoreCheck[i])
+                }
+
+                await message.channel.send("Done")
+            }
             else {
                 return // Data is currently inconsitent when difficulties are wrongly reported as other difficulties
                 await message.channel.send("Starting");
