@@ -198,8 +198,13 @@ class BeatSaverUtils {
         if (res.ok) return res
         else {
             let hashOrKey;
-            if (finder.length > 10) hashOrKey = { hash: finder }
-            else hashOrKey = { key: finder }
+
+            if (finder.length > 10) {
+                hashOrKey = { hash: finder }
+            }
+            else {
+                hashOrKey = { key: finder }
+            }
 
             //await this.client.db.collection("beatSaverLocal").updateOne(hashOrKey, { $set: { notFound: true } }, { upsert: true });
             throw new Error(res.statusText);
@@ -224,7 +229,7 @@ class BeatSaverUtils {
         }
     }
 
-    async getMapDataByHash(hash) {
+    async getMapDataByHash(hash, dontAddMap) {
         console.log("Getting data from BeatSaver instead of DB:", hash);
 
         let mapData = await BeatSaverLimiter.schedule(async () => fetch(`https://api.beatsaver.com/maps/hash/${hash}`, options)
@@ -233,7 +238,9 @@ class BeatSaverUtils {
             .catch(err => console.log(err)))
 
         if (mapData != undefined) {
-            await this.addMapToDb(mapData);
+            if (dontAddMap) {
+                await this.addMapToDb(mapData);
+            }
             return mapData;
         }
         else {
@@ -412,7 +419,7 @@ class BeatSaverUtils {
         console.time("Deletion Checker");
         const dateYesterday = Date.now() - 86400000;
         let search = { automapper: false, "versions.createdAt": { $lt: dateYesterday } };
-        if(!full) search = { deleted: { $exists: false }, automapper: false, "versions.createdAt": { $lt: dateYesterday } };
+        if (!full) search = { deleted: { $exists: false }, automapper: false, "versions.createdAt": { $lt: dateYesterday } };
         const maps = await this.client.db.collection("beatSaverLocal").find(search).toArray();
         console.log(`${maps.length} maps to check.`);
         let bulkWrite = [];
@@ -423,7 +430,14 @@ class BeatSaverUtils {
 
         for (let i = 0; i < maps.length; i++) {
             const mapHash = maps[i].versions[0].hash;
-            const index = res.findIndex(x => x === mapHash);
+            let index = res.findIndex(x => x === mapHash);
+
+            if (index === -1) {
+                // Make sure it's actually deleted, the protobuf dump is not reliable
+                if (await this.getMapDataByHash(mapHash, true) !== null) {
+                    index = 1;
+                }
+            }
 
             bulkWrite.push({
                 updateOne: {
@@ -438,7 +452,7 @@ class BeatSaverUtils {
                 bulkWrite = [];
             }
         }
-        if(bulkWrite.length > 0) await this.client.db.collection("beatSaverLocal").bulkWrite(bulkWrite);
+        if (bulkWrite.length > 0) await this.client.db.collection("beatSaverLocal").bulkWrite(bulkWrite);
         console.timeEnd("Deletion Checker");
     }
 
@@ -451,7 +465,7 @@ class BeatSaverUtils {
 
         const existingKeys = res.map(e => e.toUpperCase());
 
-        const maps = await this.db.collection("beatSaverLocal").find({ $or: [{ deleted: { $exists: false }}, {deleted: false }] }).toArray();
+        const maps = await this.db.collection("beatSaverLocal").find({ $or: [{ deleted: { $exists: false } }, { deleted: false }] }).toArray();
         const currentKeysSet = new Set(maps.map(x => x.key));
 
         const missingKeys = existingKeys.filter(e => !currentKeysSet.has(e));
