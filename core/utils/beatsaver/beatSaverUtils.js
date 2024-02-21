@@ -238,9 +238,11 @@ class BeatSaverUtils {
             .catch(err => console.log(err)))
 
         if (mapData != undefined) {
-            if (dontAddMap) {
+
+            if (mapData.version.hash !== hash || !dontAddMap) {
                 await this.addMapToDb(mapData);
             }
+
             return mapData;
         }
         else {
