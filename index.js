@@ -51,4 +51,5 @@ MongoClient.connect(config.mongourl, async (err, client) => {
     await db.collection("beatSaverLocal").createIndex({ key: 1, "versions.hash": 1 });
     await db.collection("beatSaverLocal").createIndex({ "versions.hash": 1 });
     await db.collection("beatSaverLocal").createIndex({ "metadata.levelAuthorName": "text" });
+    await db.collection("beatSaverLocal").createIndex({ "metadata.levelAuthorName": 1, "versions.createdAt": -1 });
 });

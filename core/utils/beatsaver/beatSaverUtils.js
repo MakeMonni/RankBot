@@ -100,7 +100,7 @@ class BeatSaverUtils {
             for (let i = 0; i < versionArray.length; i++) {
                 await this.db.collection("beatSaverLocal").updateOne({ key: mapObject.key }, { $addToSet: { versions: versionArray[i] } }, { upsert: true });
             }
-            await this.db.collection("beatSaverLocal").updateOne({ key: mapObject.key }, { $push: { versions: { $each: [], $sort: { createdAt: -1 } } } });
+            await this.db.collection("beatSaverLocal").updateOne({ key: mapObject.key }, { $push: { versions: { $sort: { createdAt: -1 } } } });
         }
         catch (err) {
             console.log("Error " + err + "\nWith map ")
@@ -239,7 +239,7 @@ class BeatSaverUtils {
 
         if (mapData != undefined) {
 
-            if (mapData.version.hash !== hash || !dontAddMap) {
+            if (mapData.versions[0].hash !== hash || !dontAddMap) {
                 await this.addMapToDb(mapData);
             }
 
@@ -460,14 +460,14 @@ class BeatSaverUtils {
 
     async missingMapChecker() {
         console.log("Running missing map checker")
-        console.time("Missing Map Checker");
-        let res = await fetch(`https://beatsaber.tskoll.com/api/v1/keys`)
+        console.time("Missing Keys Checker");
+        let keyres = await fetch(`https://beatsaber.tskoll.com/api/v1/keys`)
             .then(res => res.json())
-            .catch(err => console.log(err))
+            .catch(err => console.log(err));
 
-        const existingKeys = res.map(e => e.toUpperCase());
+        const existingKeys = keyres.map(e => e.toUpperCase());
 
-        const maps = await this.db.collection("beatSaverLocal").find({ $or: [{ deleted: { $exists: false } }, { deleted: false }] }).toArray();
+        let maps = await this.db.collection("beatSaverLocal").find({ $or: [{ deleted: { $exists: false } }, { deleted: false }] }).toArray();
         const currentKeysSet = new Set(maps.map(x => x.key));
 
         const missingKeys = existingKeys.filter(e => !currentKeysSet.has(e));
@@ -476,7 +476,27 @@ class BeatSaverUtils {
         for (let i = 0; i < missingKeys.length; i++) {
             await this.getMapDataByKey(missingKeys[i]);
         }
-        console.timeEnd("Missing Map Checker");
+        console.timeEnd("Missing Keys Checker");
+
+        console.time("Missing Hash Checker");
+        let hashres = await fetch(`https://beatsaber.tskoll.com/api/v1/hashes`)
+            .then(res => res.json())
+            .catch(err => console.log(err));
+
+        const existingHashes = hashres.map(e => e.toUpperCase());
+
+        // Refresh maps
+        maps = await this.db.collection("beatSaverLocal").find({ $or: [{ deleted: { $exists: false } }, { deleted: false }] }).toArray();
+        const currentHasSet = new Set(maps.map(x => x.versions[0].hash));
+
+        const missingHashes = existingHashes.filter(e => !currentHasSet.has(e));
+
+        console.log("Missing hashes:", missingHashes.length);
+        for (let i = 0; i < missingHashes.length; i++) {
+            await this.getMapDataByHash(missingHashes[i]);
+        }
+        console.timeEnd("Missing Hash Checker");
     }
+
 }
 module.exports = BeatSaverUtils;
