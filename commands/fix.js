@@ -150,7 +150,26 @@ class Fix extends Command {
 
                 await message.channel.send("Done")
             }
+            if (args[0] === "createdAtFix") {
+                await message.channel.send("Starting");
+
+                const maps = await client.db.collection("beatSaverLocal").find({ "versions.createdAt": -1 }).toArray();
+
+                const jsonMaps = JSON.stringify(maps, null, 2);
+                const jsonBuffer = Buffer.from(jsonMaps, "utf-8");
+                const attachment = new Discord.MessageAttachment(jsonBuffer, `jsonDump-${args[1]}.json`);
+                await message.channel.send("Here you go", attachment);
+
+                for (let i = 0; i < maps.length; i++) {
+                    await client.db.collection("beatSaverLocal").deleteMany({ "versions.createdAt": -1 });
+                    await client.beatsaver.findMapByHash(maps[i].versions[0].hash);
+                }
+
+                await message.channel.send("Done")
+
+            }
             else {
+                await message.channel.send("Hit the else block you dum dum");
                 return // Data is currently inconsitent when difficulties are wrongly reported as other difficulties
                 await message.channel.send("Starting");
                 const maps = await client.db.collection("beatSaverLocal").find({ "versions.diffs.me": { $exists: false } }).toArray();
