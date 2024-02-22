@@ -100,7 +100,7 @@ class BeatSaverUtils {
             for (let i = 0; i < versionArray.length; i++) {
                 await this.db.collection("beatSaverLocal").updateOne({ key: mapObject.key }, { $addToSet: { versions: versionArray[i] } }, { upsert: true });
             }
-            await this.db.collection("beatSaverLocal").updateOne({ key: mapObject.key }, { $push: { versions: { $sort: { createdAt: -1 } } } });
+            await this.db.collection("beatSaverLocal").updateOne({ key: mapObject.key }, { $push: { versions: { $each: [], $sort: { createdAt: -1 } } } });
         }
         catch (err) {
             console.log("Error " + err + "\nWith map ")
