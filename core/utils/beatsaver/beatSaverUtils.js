@@ -460,42 +460,48 @@ class BeatSaverUtils {
 
     async missingMapChecker() {
         console.log("Running missing map checker")
-        console.time("Missing Keys Checker");
-        let keyres = await fetch(`https://beatsaber.tskoll.com/api/v1/keys`)
-            .then(res => res.json())
-            .catch(err => console.log(err));
 
-        const existingKeys = keyres.map(e => e.toUpperCase());
+        // Brackets for GC
+        {
+            console.time("Missing Keys Checker");
+            let keyres = await fetch(`https://beatsaber.tskoll.com/api/v1/keys`)
+                .then(res => res.json())
+                .catch(err => console.log(err));
 
-        let maps = await this.db.collection("beatSaverLocal").find({ $or: [{ deleted: { $exists: false } }, { deleted: false }] }).toArray();
-        const currentKeysSet = new Set(maps.map(x => x.key));
+            keyres.forEach((e, i) => keyres[i] = e.toUpperCase());
 
-        const missingKeys = existingKeys.filter(e => !currentKeysSet.has(e));
+            let maps = await this.db.collection("beatSaverLocal").find({ $or: [{ deleted: { $exists: false } }, { deleted: false }] }).project({ key: 1 }).toArray();
+            const currentKeysSet = new Set(maps.map(x => x.key));
 
-        console.log("Missing keys:", missingKeys.length)
-        for (let i = 0; i < missingKeys.length; i++) {
-            await this.getMapDataByKey(missingKeys[i]);
+            const missingKeys = keyres.filter(e => !currentKeysSet.has(e));
+
+            console.log("Missing keys:", missingKeys.length)
+            for (let i = 0; i < missingKeys.length; i++) {
+                await this.getMapDataByKey(missingKeys[i]);
+            }
+            console.timeEnd("Missing Keys Checker");
         }
-        console.timeEnd("Missing Keys Checker");
 
-        console.time("Missing Hash Checker");
-        let hashres = await fetch(`https://beatsaber.tskoll.com/api/v1/hashes`)
-            .then(res => res.json())
-            .catch(err => console.log(err));
+        // Brackets for GC
+        {
+            console.time("Missing Hash Checker");
+            let hashres = await fetch(`https://beatsaber.tskoll.com/api/v1/hashes`)
+                .then(res => res.json())
+                .catch(err => console.log(err));
 
-        const existingHashes = hashres.map(e => e.toUpperCase());
+            hashres.forEach((e, i) => hashres[i] = e.toUpperCase());;
 
-        // Refresh maps
-        maps = await this.db.collection("beatSaverLocal").find({ $or: [{ deleted: { $exists: false } }, { deleted: false }] }).toArray();
-        const currentHasSet = new Set(maps.map(x => x.versions[0].hash));
+            let maps = await this.db.collection("beatSaverLocal").find({ $or: [{ deleted: { $exists: false } }, { deleted: false }] }).project({ "versions.hash": 1 }).toArray();
+            const currentHasSet = new Set(maps.map(x => x.versions[0].hash));
 
-        const missingHashes = existingHashes.filter(e => !currentHasSet.has(e));
+            const missingHashes = hashres.filter(e => !currentHasSet.has(e));
 
-        console.log("Missing hashes:", missingHashes.length);
-        for (let i = 0; i < missingHashes.length; i++) {
-            await this.getMapDataByHash(missingHashes[i]);
+            console.log("Missing hashes:", missingHashes.length);
+            for (let i = 0; i < missingHashes.length; i++) {
+                await this.getMapDataByHash(missingHashes[i]);
+            }
+            console.timeEnd("Missing Hash Checker");
         }
-        console.timeEnd("Missing Hash Checker");
     }
 
 }
