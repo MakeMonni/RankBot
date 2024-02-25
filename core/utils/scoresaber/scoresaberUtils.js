@@ -240,7 +240,7 @@ class ScoreSaberUtils {
 
         console.log(`Getting one score id: ${leaderboardId}, user: ${scoreSaberID} name: ${scoreSaberUserName}`);
         let executions = 0;
-        const scores = await limiter.schedule({ id: `One score for ${scoreSaberUserName} leaderboard:${scoreSaberID} userId: ${scoreSaberID}` }, async () => {
+        const scores = await limiter.schedule({ id: `One score for ${scoreSaberUserName} leaderboard:${leaderboardId} userId: ${scoreSaberID}` }, async () => {
             executions++;
             const res = await fetch(`https://scoresaber.com/api/leaderboard/by-id/${leaderboardId}/scores?search=${scoreSaberUserName}`)
                 .then(res => res.json())
