@@ -15,6 +15,8 @@ class BeatSaviorUtils {
     }
 
     async getRecentPlays(scoreSaberID, setup) {
+        // Disabled because beatsavior is no longer active
+        return null; 
         const userWithBeatSavior = await this.db.collection("discordRankBotUsers").findOne({ scId: scoreSaberID, beatsavior: true });
         if (userWithBeatSavior == null && setup == false) {
             return null;
