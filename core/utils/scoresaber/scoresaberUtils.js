@@ -246,10 +246,10 @@ class ScoreSaberUtils {
                 .then(res => res.json())
                 .catch(err => { throw new Error(err) });
 
-            if (executions > 3) console.log(`Failed multiple times to get scores from ${scoreSaberID} page: ${page}.`)
+            if (executions > 3) console.log(`Failed multiple times to get scores from ${scoreSaberID} name: ${scoreSaberUserName} leaderboard: ${leaderboardId}.`)
             else {
                 let scoreFound = false;
-                for (let i = 0; i < res.scores.length; i++) {
+                for (let i = 0; i < res?.scores?.length; i++) {
                     const score = res.scores[i];
                     if (score.leaderboardPlayerInfo = scoreSaberID) {
                         console.log("Found score");
