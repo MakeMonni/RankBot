@@ -249,7 +249,7 @@ class ScoreSaberUtils {
             if (executions > 3) console.log(`Failed multiple times to get scores from ${scoreSaberID} page: ${page}.`)
             else {
                 let scoreFound = false;
-                for (let i = 0; i < res.scores.length; i++) {
+                for (let i = 0; i < res?.scores?.length; i++) {
                     const score = res.scores[i];
                     if (score.leaderboardPlayerInfo = scoreSaberID) {
                         console.log("Found score");
