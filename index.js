@@ -42,6 +42,23 @@ MongoClient.connect(config.mongourl, async (err, client) => {
         }
     }
 
+    const timedMessagesArr = config.customTimedDMMessage
+    const guild = await botClient.guilds.fetch(botClient.config.guildId);
+
+    for (let i = 0; i < timedMessagesArr.length; i++) {
+        let member;
+        
+        try { member = await guild.members.fetch({ user: timedMessagesArr[i].discordId, force: true }); }
+        catch (err) {
+            console.log("Couldnt find member", err);
+            continue;
+        }
+
+        schedule.scheduleJob(timedMessagesArr[i].cronTimer, async function () {
+            await member.send(timedMessagesArr[i].message);
+        })
+    };
+
     await db.collection("discordRankBotScores").createIndex({ hash: 1, player: 1, leaderboardId: 1 });
     await db.collection("discordRankBotScores").createIndex({ hash: 1, player: 1 });
     await db.collection("discordRankBotScores").createIndex({ ranked: 1, score: -1, date: 1, }, { partialFilterExpression: { country: config.country } });
