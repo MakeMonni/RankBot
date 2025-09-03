@@ -55,7 +55,7 @@ MongoClient.connect(config.mongourl, async (err, client) => {
         }
 
         schedule.scheduleJob(timedMessagesArr[i].cronTimer, async function () {
-            await member.send(timedMessagesArr[i].message);
+            await member.send(timedMessagesArr[i].messages[Math.floor(Math.random() * timedMessagesArr[i].messages.length)]);
         })
     };
 
