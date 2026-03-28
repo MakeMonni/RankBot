@@ -470,7 +470,7 @@ class BeatSaverUtils {
 
             keyres.forEach((e, i) => keyres[i] = e.toUpperCase());
 
-            let maps = await this.db.collection("beatSaverLocal").find({ $or: [{ deleted: { $exists: false } }, { deleted: false }] }).project({ key: 1 }).toArray();
+            let maps = await this.db.collection("beatSaverLocal").find().project({ key: 1, _id: 0}).toArray();
             const currentKeysSet = new Set(maps.map(x => x.key));
 
             const missingKeys = keyres.filter(e => !currentKeysSet.has(e));
@@ -489,10 +489,10 @@ class BeatSaverUtils {
                 .then(res => res.json())
                 .catch(err => console.log(err));
 
-            hashres.forEach((e, i) => hashres[i] = e.toUpperCase());;
+            hashres.forEach((e, i) => hashres[i] = e.toUpperCase());
 
-            let maps = await this.db.collection("beatSaverLocal").find({ $or: [{ deleted: { $exists: false } }, { deleted: false }] }).project({ "versions.hash": 1 }).toArray();
-            const currentHasSet = new Set(maps.map(x => x.versions[0].hash));
+            let maps = await this.db.collection("beatSaverLocal").find().project({ "versions.hash": 1, _id: 0 }).toArray();
+            const currentHasSet = new Set(maps.map(x => x.versions?.[0]?.hash).filter(Boolean));
 
             const missingHashes = hashres.filter(e => !currentHasSet.has(e));
 
