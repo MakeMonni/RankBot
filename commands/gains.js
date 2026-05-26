@@ -92,6 +92,7 @@ class Gains extends Command {
                 const scProfile = await client.scoresaber.getUser(user.scId);
 
                 const ppGained = Math.round((scProfile.pp - user.pp) * 100) / 100;
+                const pp = Math.round((scProfile.pp) * 100) / 100
                 const rankChange = user.rank - scProfile.rank;
                 const countryRankChange = user.countryRank - scProfile.countryRank;
                 const lengthString = new Date(totalLength * 1000).toISOString().substr(11, 8); //Fix?
@@ -109,7 +110,7 @@ class Gains extends Command {
                     .setURL(`https://scoresaber.com/u/${user.scId}?page=1&sort=recent`)
                     .setThumbnail(`${userAvatar(message.author.avatarURL())}`)
                     .addField(`Rank :globe_with_meridians:`, `${rankChange} ${Emote(user.rank, scProfile.rank, message)} ${scProfile.rank}`)
-                    .addField(`PP`, `${ppGained} ${Emote(scProfile.pp, user.pp, message)} ${scProfile.pp}`)
+                    .addField(`PP`, `${ppGained} ${Emote(scProfile.pp, user.pp, message)} ${pp}`)
                     .addField(`Country :flag_${scProfile.country.toLowerCase()}:`, `${countryRankChange} ${Emote(user.countryRank, scProfile.countryRank, message)} ${scProfile.countryRank}`)
                     .setFooter(`In the last ${time}.`)
 
