@@ -70,7 +70,8 @@ class ScoreSaberUtils {
             if (scUser.countryRank === 0) playerRank = -1;
 
             if (!playerRank) {
-                console.log(`There was an error with this user, user: ${discordUsername} sc:${scoresaberId} request object: ${scUser}`)
+                console.log(`There was an error with this user, user: ${discordUsername} sc:${scoresaberId} request object: `);
+                console.log(scUser);
             }
 
             let inactive = false;
