@@ -2,11 +2,11 @@ const Bottleneck = require(`bottleneck`);
 const fetch = require('node-fetch');
 
 const limiter = new Bottleneck({
-    reservoir: 350,
-    reservoirRefreshAmount: 350,
+    reservoir: 390,
+    reservoirRefreshAmount: 390,
     reservoirRefreshInterval: 1000 * 60,
 
-    minTime: 25
+    minTime: 155 // 1000 / 6,5 = ~153,8
 });
 
 limiter.on("failed", async (error, jobInfo) => {
